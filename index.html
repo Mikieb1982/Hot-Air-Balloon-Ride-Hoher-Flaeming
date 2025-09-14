@@ -407,7 +407,7 @@ html, body {
     <!-- Map Container -->
     <div id="map-container">
         <div id="map-viewport">
-            <img id="map-image" alt="Hoher Fläming Map Placeholder" src='data:image/svg+xml;utf8,<svg width="2048" height="1448" xmlns="http://www.w3.org/2000/svg" style="background-color:%23f4f1e8;"><text x="50%" y="50%" font-family="Georgia, serif" font-size="60" text-anchor="middle" dominant-baseline="middle" fill="%236b5f55">Map Image Placeholder</text><text x="50%" y="50%" dy="1.5em" font-family="Georgia, serif" font-size="30" text-anchor="middle" dominant-baseline="middle" fill="%236b5f55">The original map.jpg has been replaced to create a single file.</text></svg>'>
+            <img id="map-image" src="images/map.jpg" alt="Map of Hoher Fläming">
             
             <!-- Balloon -->
             <div id="balloon-container">
@@ -588,7 +588,7 @@ html, body {
 
     <script type="module">
 'use strict';
-import {GoogleGenAI} from "https://esm.sh/@google/genai@^1.12.0";
+import {GoogleGenAI} from "@google/genai";
 
 // Configuration
 const CONFIG = {
@@ -708,22 +708,38 @@ function initAudio() {
     console.log("Audio disabled for offline compatibility.");
 }
 
-function loadImageAndStart() {
+async function loadImageAndStart() {
     try {
         if (!dom.mapImage) throw new Error('Map image element not found in the DOM.');
         
-        // The image src is a data URI in the HTML, so it should load synchronously
-        // or very quickly. We check its 'complete' status.
-        if (dom.mapImage.complete) {
-            onMapLoaded();
-        } else {
-            // If for some reason it's not complete, we set up listeners.
-            dom.mapImage.onload = onMapLoaded;
-            dom.mapImage.onerror = onMapError;
+        // The browser can be tricky with image loading.
+        // Using fetch gives us more control and better error reporting.
+        const response = await fetch('images/map.jpg');
+
+        if (!response.ok) {
+            // This will give a clear network error in the console.
+            throw new Error(`Failed to fetch map image. Status: ${response.status} ${response.statusText}`);
         }
+
+        const imageBlob = await response.blob();
+        const imageUrl = URL.createObjectURL(imageBlob);
+
+        // Now, we set the source and wait for the browser to render it.
+        dom.mapImage.onload = () => {
+            URL.revokeObjectURL(imageUrl); // Clean up the blob URL once the image is loaded.
+            onMapLoaded();
+        };
+        dom.mapImage.onerror = (e) => {
+            URL.revokeObjectURL(imageUrl); // Clean up even on error.
+            console.error("Error event on image element after setting blob URL:", e);
+            onMapError();
+        };
+        
+        dom.mapImage.src = imageUrl;
+
     } catch (error) {
         console.error('Failed to load map resource:', error);
-        onMapError(); // Display a user-friendly error.
+        onMapError(); // Display a user-friendly error on the loading screen.
     }
 }
 
@@ -767,7 +783,7 @@ function onMapError() {
             <div class="loading-balloon" style="animation: none;">⚠️</div>
             <div class="loading-text">Error: Map failed to load.</div>
             <p style="font-size: 14px; color: var(--text-secondary); max-width: 300px; text-align: center;">
-                Please check the developer console for more details. The embedded map image might be corrupted.
+                Please check the developer console for more details and ensure the file at 'images/map.jpg' is available.
             </p>
         </div>
     `;
