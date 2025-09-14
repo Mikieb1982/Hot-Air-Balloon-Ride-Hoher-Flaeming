@@ -1,4 +1,3 @@
-
 'use strict';
 import {GoogleGenAI} from "@google/genai";
 
@@ -8,10 +7,10 @@ const CONFIG = {
     MAP_HEIGHT: 1448,
     START_X: 1364,
     START_Y: 605,
-    MAX_SPEED: 6,
-    ACCELERATION: 0.22,
-    DRAG: 0.97,
-    TURN_SPEED: 4.0,
+    MAX_SPEED: 2.5,
+    ACCELERATION: 0.05,
+    DRAG: 0.96,
+    TURN_SPEED: 2.5,
     LANDING_RADIUS: 70,
     JOYSTICK_RADIUS: 55,
 };
@@ -38,7 +37,7 @@ const POI_DATA = [
 
 // Game State
 const state = {
-    helicopter: {
+    balloon: {
         x: CONFIG.START_X,
         y: CONFIG.START_Y,
         vx: 0,
@@ -72,8 +71,8 @@ const dom = {
     mapContainer: document.getElementById('map-container') as HTMLElement,
     mapViewport: document.getElementById('map-viewport') as HTMLElement,
     mapImage: document.getElementById('map-image') as HTMLImageElement,
-    helicopterContainer: document.getElementById('helicopter-container') as HTMLElement,
-    mainRotor: document.getElementById('main-rotor') as unknown as SVGElement | null,
+    balloonContainer: document.getElementById('balloon-container') as HTMLElement,
+    directionIndicator: document.getElementById('direction-indicator') as HTMLElement,
     speedDisplay: document.getElementById('speed-display') as HTMLElement,
     poiCount: document.getElementById('poi-count') as HTMLElement,
     timeDisplay: document.getElementById('time-display') as HTMLElement,
@@ -192,7 +191,7 @@ function onMapLoaded() {
 function onMapError() {
     dom.loadingScreen.innerHTML = `
         <div class="loading-content" style="color: #c94a4a;">
-            <div class="loading-helicopter" style="animation: none;">⚠️</div>
+            <div class="loading-balloon" style="animation: none;">⚠️</div>
             <div class="loading-text">Error: Map failed to load.</div>
             <p style="font-size: 14px; color: var(--text-secondary); max-width: 300px; text-align: center;">
                 Please check the developer console for more details and ensure the file at 'images/map.jpg' is available.
@@ -376,7 +375,7 @@ function gameLoop(currentTime: number) {
 }
 
 function update(dt: number) {
-    const heli = state.helicopter;
+    const balloon = state.balloon;
     if (state.startTime > 0) state.elapsedTime = Date.now() - state.startTime;
 
     let thrust = 0;
@@ -389,46 +388,46 @@ function update(dt: number) {
     if (state.input.joystick.active && state.input.joystick.magnitude > 0.1) {
         thrust = state.input.joystick.magnitude;
         const targetAngle = state.input.joystick.angle * 180 / Math.PI;
-        let angleDiff = targetAngle - heli.angle;
+        let angleDiff = targetAngle - balloon.angle;
         while (angleDiff > 180) angleDiff -= 360;
         while (angleDiff < -180) angleDiff += 360;
         turning = Math.max(-1, Math.min(1, angleDiff / 45));
     }
 
-    heli.angle += turning * CONFIG.TURN_SPEED * dt;
-    heli.angle = (heli.angle + 360) % 360;
+    balloon.angle += turning * CONFIG.TURN_SPEED * dt;
+    balloon.angle = (balloon.angle + 360) % 360;
 
-    const angleRad = heli.angle * Math.PI / 180;
+    const angleRad = balloon.angle * Math.PI / 180;
     const accel = thrust * CONFIG.ACCELERATION;
-    heli.vx += Math.cos(angleRad) * accel * dt;
-    heli.vy += Math.sin(angleRad) * accel * dt;
+    balloon.vx += Math.cos(angleRad) * accel * dt;
+    balloon.vy += Math.sin(angleRad) * accel * dt;
 
     const drag = state.nearbyPOI ? 0.88 : CONFIG.DRAG;
-    heli.vx *= Math.pow(drag, dt);
-    heli.vy *= Math.pow(drag, dt);
+    balloon.vx *= Math.pow(drag, dt);
+    balloon.vy *= Math.pow(drag, dt);
 
-    const oldX = heli.x;
-    const oldY = heli.y;
-    heli.speed = Math.sqrt(heli.vx * heli.vx + heli.vy * heli.vy);
-    if (heli.speed > CONFIG.MAX_SPEED) {
-        const scale = CONFIG.MAX_SPEED / heli.speed;
-        heli.vx *= scale;
-        heli.vy *= scale;
-        heli.speed = CONFIG.MAX_SPEED;
+    const oldX = balloon.x;
+    const oldY = balloon.y;
+    balloon.speed = Math.sqrt(balloon.vx * balloon.vx + balloon.vy * balloon.vy);
+    if (balloon.speed > CONFIG.MAX_SPEED) {
+        const scale = CONFIG.MAX_SPEED / balloon.speed;
+        balloon.vx *= scale;
+        balloon.vy *= scale;
+        balloon.speed = CONFIG.MAX_SPEED;
     }
 
-    heli.x += heli.vx * dt;
-    heli.y += heli.vy * dt;
-    heli.x = Math.max(20, Math.min(CONFIG.MAP_WIDTH - 20, heli.x));
-    heli.y = Math.max(20, Math.min(CONFIG.MAP_HEIGHT - 20, heli.y));
+    balloon.x += balloon.vx * dt;
+    balloon.y += balloon.vy * dt;
+    balloon.x = Math.max(20, Math.min(CONFIG.MAP_WIDTH - 20, balloon.x));
+    balloon.y = Math.max(20, Math.min(CONFIG.MAP_HEIGHT - 20, balloon.y));
 
-    const distance = Math.sqrt(Math.pow(heli.x - oldX, 2) + Math.pow(heli.y - oldY, 2));
+    const distance = Math.sqrt(Math.pow(balloon.x - oldX, 2) + Math.pow(balloon.y - oldY, 2));
     if (distance > 0.01) {
-        heli.totalDistance += distance;
-        state.stats.totalDistance = heli.totalDistance / 100;
+        balloon.totalDistance += distance;
+        state.stats.totalDistance = balloon.totalDistance / 100;
     }
 
-    if (heli.speed > state.stats.maxSpeed) state.stats.maxSpeed = heli.speed;
+    if (balloon.speed > state.stats.maxSpeed) state.stats.maxSpeed = balloon.speed;
 
     checkPOIProximity();
     updateAudio();
@@ -439,7 +438,7 @@ function checkPOIProximity() {
     let minDistance = Infinity;
     for (const poi of state.pois) {
         if (poi.visited) continue;
-        const distance = Math.hypot(state.helicopter.x - poi.x, state.helicopter.y - poi.y);
+        const distance = Math.hypot(state.balloon.x - poi.x, state.balloon.y - poi.y);
         if (distance < CONFIG.LANDING_RADIUS && distance < minDistance) {
             nearestPOI = poi;
             minDistance = distance;
@@ -464,21 +463,17 @@ function updateAudio() {
 }
 
 function render() {
-    // The state.helicopter.x/y represents the center. CSS transform applies to the top-left corner.
-    // We offset by -50% (of the element's size) to correctly center the helicopter.
-    dom.helicopterContainer.style.transform = `translate(calc(${state.helicopter.x}px - 50%), calc(${state.helicopter.y}px - 50%)) rotate(${state.helicopter.angle + 90}deg)`;
+    // The state.balloon.x/y represents the center. CSS transform applies to the top-left corner.
+    // We offset by -50% (of the element's size) to correctly center the balloon.
+    dom.balloonContainer.style.transform = `translate(calc(${state.balloon.x}px - 50%), calc(${state.balloon.y}px - 50%))`;
+    dom.directionIndicator.style.transform = `translateX(-50%) rotate(${state.balloon.angle + 90}deg)`;
     
-    if (dom.mainRotor) {
-        const rotationSpeed = 0.5 + state.helicopter.speed * 2;
-        dom.mainRotor.style.animationDuration = `${1 / rotationSpeed}s`;
-    }
-
-    dom.speedDisplay.textContent = state.helicopter.speed.toFixed(1);
+    dom.speedDisplay.textContent = state.balloon.speed.toFixed(1);
     dom.poiCount.textContent = `${state.visitedCount}/16`;
     dom.timeDisplay.textContent = formatTime(state.elapsedTime);
-    const heading = Math.round((state.helicopter.angle + 360) % 360);
+    const heading = Math.round((state.balloon.angle + 360) % 360);
     dom.headingDisplay.textContent = `${heading}°`;
-    dom.compassNeedle.style.transform = `rotate(${state.helicopter.angle}deg)`;
+    dom.compassNeedle.style.transform = `rotate(${state.balloon.angle}deg)`;
 
     dom.statDistance.textContent = state.stats.totalDistance.toFixed(1);
     dom.statMaxSpeed.textContent = state.stats.maxSpeed.toFixed(1);
@@ -508,8 +503,8 @@ function renderMinimap() {
     });
     
     ctx.save();
-    ctx.translate(state.helicopter.x * scale, state.helicopter.y * scale);
-    ctx.rotate((state.helicopter.angle + 90) * Math.PI / 180);
+    ctx.translate(state.balloon.x * scale, state.balloon.y * scale);
+    ctx.rotate((state.balloon.angle + 90) * Math.PI / 180);
     ctx.fillStyle = '#3d352e';
     ctx.beginPath();
     ctx.moveTo(0, -4);
@@ -523,8 +518,8 @@ function renderMinimap() {
 function centerCamera() {
     const viewportWidth = dom.mapContainer.clientWidth;
     const viewportHeight = dom.mapContainer.clientHeight;
-    const targetX = -state.helicopter.x + viewportWidth / 2;
-    const targetY = -state.helicopter.y + viewportHeight / 2;
+    const targetX = -state.balloon.x + viewportWidth / 2;
+    const targetY = -state.balloon.y + viewportHeight / 2;
     const minX = -(CONFIG.MAP_WIDTH - viewportWidth);
     const minY = -(CONFIG.MAP_HEIGHT - viewportHeight);
     const clampedX = Math.max(minX, Math.min(0, targetX));
@@ -533,10 +528,10 @@ function centerCamera() {
 }
 
 function centerCameraOn(x: number, y: number) {
-    state.helicopter.x = x;
-    state.helicopter.y = y;
-    state.helicopter.vx = 0;
-    state.helicopter.vy = 0;
+    state.balloon.x = x;
+    state.balloon.y = y;
+    state.balloon.vx = 0;
+    state.balloon.vy = 0;
     centerCamera();
 }
 
@@ -545,8 +540,8 @@ function landAtPOI() {
     if (!state.nearbyPOI || !state.gameActive) return;
     
     state.gameActive = false;
-    state.helicopter.vx = 0;
-    state.helicopter.vy = 0;
+    state.balloon.vx = 0;
+    state.balloon.vy = 0;
     state.stats.landings++;
     
     const poi = state.nearbyPOI;
@@ -591,7 +586,7 @@ function navigateToNextPOI() {
     let nearest = unvisited[0];
     let minDist = Infinity;
     unvisited.forEach(poi => {
-        const dist = Math.hypot(poi.x - state.helicopter.x, poi.y - state.helicopter.y);
+        const dist = Math.hypot(poi.x - state.balloon.x, poi.y - state.balloon.y);
         if (dist < minDist) {
             minDist = dist;
             nearest = poi;
@@ -619,7 +614,7 @@ function checkAchievements() {
         state.achievements.add('halfway');
         showAchievement('⭐', 'Halfway There!');
     }
-    if (state.stats.maxSpeed >= 5.8 && !state.achievements.has('speed')) {
+    if (state.stats.maxSpeed >= 4.8 && !state.achievements.has('speed')) {
         state.achievements.add('speed');
         showAchievement('🚀', 'Speed Demon!');
     }
@@ -642,7 +637,7 @@ function closeMenu() {
 }
 
 function restartGame() {
-    state.helicopter = { x: CONFIG.START_X, y: CONFIG.START_Y, vx: 0, vy: 0, angle: -90, speed: 0, totalDistance: 0 };
+    state.balloon = { x: CONFIG.START_X, y: CONFIG.START_Y, vx: 0, vy: 0, angle: -90, speed: 0, totalDistance: 0 };
     state.visitedCount = 0;
     state.nearbyPOI = null;
     state.gameActive = true;
