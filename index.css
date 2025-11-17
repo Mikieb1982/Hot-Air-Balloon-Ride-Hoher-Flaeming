@@ -112,37 +112,29 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    /* Increased interactive area to 3x the original visual size for easier tapping */
+    width: 96px; 
+    height: 96px;
 }
 
 .poi-marker-inner {
     width: 32px;
     height: 32px;
-    background: var(--accent-primary);
-    color: white;
+    /* Marker is now invisible by default to encourage exploration. */
+    /* It becomes visible via a pulse animation when nearby. */
+    background: transparent;
+    color: transparent;
     border-radius: 50%;
-    text-align: center;
-    line-height: 28px; /* 32px height - 4px total border */
-    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
     font-weight: bold;
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border: none;
+    box-shadow: none;
     transition: transform 0.2s ease;
-}
-
-.poi-marker-label {
-    margin-top: 5px;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: normal;
-    white-space: nowrap;
-    box-shadow: var(--shadow-sm);
-    color: var(--text-primary);
-    opacity: 1;
-    transform: translateY(0);
-    transition: all 0.2s ease-in-out;
-    pointer-events: auto;
+    text-shadow: none;
 }
 
 .poi-marker.nearby .poi-marker-inner {
@@ -151,18 +143,17 @@ html, body {
 }
 
 @keyframes nearby-pulse {
-    0%, 100% { box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 0 0 rgba(201, 74, 74, 0.7); }
-    50% { box-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 0 8px rgba(201, 74, 74, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(201, 74, 74, 0.7); }
+    50% { box-shadow: 0 0 0 10px rgba(201, 74, 74, 0); }
 }
 
 .poi-marker.visited .poi-marker-inner {
-    background: var(--accent-success);
+    /* Visited markers are also invisible and stop pulsing. */
+    background: transparent;
     transform: scale(0.9);
+    animation: none;
 }
 
-.poi-marker.visited .poi-marker-label {
-    text-decoration: line-through;
-}
 
 /* Balloon */
 #balloon-container {
@@ -185,9 +176,16 @@ html, body {
     animation: balloon-bob 3s ease-in-out infinite;
 }
 
+#balloon-image {
+    width: 100%;
+    height: auto;
+    /* Add a subtle shadow to give it depth */
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+}
+
 @keyframes balloon-bob {
-    0%, 100% { transform: translateY(0px) rotate(-1deg); }
-    50% { transform: translateY(-4px) rotate(1deg); }
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
 }
 
 #direction-indicator {
@@ -215,6 +213,16 @@ html, body {
     pointer-events: none;
 }
 
+.hud-left, .hud-right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+}
+.hud-right {
+    align-items: flex-end;
+}
+
 .hud-panel {
     background: var(--bg-panel);
     backdrop-filter: blur(5px);
@@ -229,7 +237,7 @@ html, body {
 .hud-label { color: var(--text-secondary); font-size: 14px; }
 .hud-value { font-weight: bold; font-size: 18px; color: var(--text-primary); }
 
-#compass { width: 50px; height: 50px; position: relative; margin-left: 15px; }
+#compass { width: 50px; height: 50px; position: relative; margin-left: auto; margin-right: auto; }
 #compass-ring { 
     position: absolute; inset: 0; 
     border: 2px solid var(--text-secondary); 
@@ -370,9 +378,150 @@ html, body {
 #minimap { position: fixed; bottom: 20px; right: 20px; width: 180px; height: 135px; background: rgba(255,255,255,0.7); border: 2px solid var(--border-color); border-radius: 8px; overflow: hidden; z-index: 200; box-shadow: var(--shadow-md); }
 #minimap-canvas { width: 100%; height: 100%; }
 
+/* Waypoint & Guidance */
+#waypoint-marker {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+    z-index: 101;
+    cursor: pointer;
+    display: none;
+    border-radius: 50%;
+    background: #3498db;
+    border: 3px solid white;
+    box-shadow: 0 0 0 0 rgba(52, 152, 219, 1);
+    animation: waypoint-pulse-anim 2s infinite ease-out;
+}
+
+#waypoint-marker.visible {
+    display: block;
+}
+
+@keyframes waypoint-pulse-anim {
+    0% {
+        box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 12px rgba(52, 152, 219, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
+    }
+}
+
+#guidance-line-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 99;
+    display: none;
+}
+
+#guidance-line {
+    stroke: rgba(52, 152, 219, 0.8);
+    stroke-width: 3px;
+    stroke-dasharray: 8, 8;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-    #hud-container { flex-direction: column; gap: 10px; }
-    #menu-container { width: 100%; right: -100%; }
-    #minimap { display: none; }
+    #hud-container {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+    }
+    .hud-left {
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+    }
+    .hud-right {
+        flex-direction: row-reverse;
+        justify-content: space-between;
+        align-items: flex-start;
+        width: 100%;
+    }
+    #menu-container {
+        width: 100%;
+        right: -100%;
+    }
+    #minimap {
+        display: none;
+    }
+
+    /* HUD adjustments */
+    .hud-panel {
+        padding: 8px 12px;
+    }
+    .hud-label {
+        font-size: 12px;
+    }
+    .hud-value {
+        font-size: 16px;
+    }
+    #heading-display {
+        font-size: 16px;
+    }
+    #compass {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* Controls adjustments */
+    #controls-container {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+    }
+    #joystick-container {
+        width: 110px;
+        height: 110px;
+    }
+    .action-buttons {
+        gap: 10px;
+    }
+    .action-button {
+        width: 60px;
+        height: 60px;
+        font-size: 14px;
+    }
+    .action-button.secondary {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+    }
+
+    .poi-marker-label {
+        font-size: 11px;
+        padding: 2px 5px;
+    }
+
+    /* Modal adjustments */
+    .modal-content {
+        padding: 20px;
+        width: calc(100% - 20px);
+    }
+    .modal h2 {
+        font-size: 20px;
+    }
+    .modal-description {
+        font-size: 14px;
+        max-height: 120px;
+    }
+    .modal-buttons {
+        flex-direction: column-reverse; /* Stack buttons for easier tapping */
+        gap: 10px;
+    }
+    .modal-button {
+        width: 100%;
+        text-align: center;
+    }
 }

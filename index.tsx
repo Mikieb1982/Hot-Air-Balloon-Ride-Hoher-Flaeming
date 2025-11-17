@@ -1,5 +1,6 @@
 'use strict';
-import {GoogleGenAI} from "@google/genai";
+
+import { GoogleGenAI, Modality } from "@google/genai";
 
 // Configuration
 const CONFIG = {
@@ -26,13 +27,20 @@ const POI_DATA = [
     { id: 7, name: "7. Bad Belzig mit Burg Eisenhardt", x: 1364, y: 605, description: "Auf der komplett erhaltenen, die 1000-jährige Geschichte der Stadt hautnah erlunden. Vom Butterturm bietet sich wohl der schönste Ausblick auf Stadt und Urstromtal. Unterhalb der Burg befindet sich die Burgwiesen, auf denen die bedrohfreie trachten Großtrappen einen stillen Unterschlupf weckt. In der SteinTherme sorgt jodihaltiges Thermalwasser für gesunde Entspannung.<br><br><a href=\"https://www.google.com/maps/place/Burg+Eisenhardt\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
     { id: 8, name: "8. Aussichtspunkt Belziger Landschaftswiesen", x: 1575, y: 555, description: "Am Burgenwanderweg 43 gelegen, liest sich ein besonders eindrückender Blick in das Niederungsgebiet der Belziger Land-schaftswiesen. Dort befindet sich eines der wichtigsten Vogelschutzgebiete Brandenburgs. Wenn im Winterhalbjahr Großtrappen pflichtliche Nahrung suchen, bieten sich vom Rastplatz aus sehr gute Beobachtungsmög-lichkeiten.<br><br><a href=\"https://www.google.com/maps/place/Aussichtsturm+Belziger+Landschaftswiesen\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
     { id: 9, name: "9. Wiesenburg mit Schloss und Park", x: 765, y: 855, description: "Das Schloss erhebt sich heute über das Westende des 19. Jahrhunderts. Vom Schlossturm hat man eine ein-druckvolle Aussicht auf Wiesenburg und seinen Parkburg. Der aufstützende als Landschaftspark gestaltete Schlosspark ist der bedeutendste Aussage seiner Art im Hohen Fläming und lädt zum ausgiebigen Samsaui und Wohlritz. Bis zum Bahnhof erstrekt sich diese Anlage, durch die aus dem Kunstwanderweg führt.<br><br><a href=\"https://www.google.com/maps/place/Schloss+Wiesenburg\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 10, name: "10. Naturparkzentrum Hoher Fläming", x: 1165, y: 1370, description: "Das Besucherinformationszentrum ist eine zentrale Anlauf-stelle für alle Gäste. Hier erhält man die besten Tipps für Ausflüge in und durch Hohen Fläming und kann Fahrräder ausleihen. Neben dem Fläming-Laden mit regionalen Produkten lädt eine spannenrde Naturparkzentrums ausstellung und einen 'Garten der Sinne'. Direkt vor dem Naturparkzentrum hält der Bus der genannten.<br><br><a href=\"https://www.google.com/maps/place/Naturparkzentrum+Hoher+Fl%C3%A4ming\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 10, name: "10. Naturparkzentrum Hoher Fläming", x: 1165, y: 1370, description: "Das Besucherinformationszentrum ist eine zentrale Anlauf-stelle für alle Gäste. Hier erhält man die besten Tipps für Ausflüge in und durch Hohen Fläming und kann Fahrräder ausleihen. Neben dem Fläming-Laden mit regionalen Produkten lädt eine spannenrde Naturparkzentrums ausstellung und einen 'Garten der Sinne'. Direkt vor dem Naturparkzentrum hält der bus der genannten.<br><br><a href=\"https://www.google.com/maps/place/Naturparkzentrum+Hoher+Fl%C3%A4ming\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
     { id: 11, name: "11. Raben mit Burg Rabenstein", x: 1120, y: 1333, description: "Auf der Raben blicken 'legen' legt die süchlichste der Fläming-burgen, die Hohenburg Rabenstein. Von der Burg führt ein Friedlingspfad durch das Naturschutzgebiet Rabenstein hinunter ins Dorf und bis zum Naturparkzentrum. Die topsteller offene Feldsein-kirche kann auch besucht werden. Der Gasthof Hemmerling be-wirtet täglich außer montags seine Gäste.<br><br><a href=\"https://www.google.com/maps/place/Burg+Rabenstein\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
     { id: 12, name: "12. Niemegk", x: 1620, y: 1140, description: "Das Städtchen Niemegk und das alte Rathaus prägen das Stadtbild um. Vom Kirchturm bietet sich ein schöner Ausblick auf die Hauptarten des Flämings. Ein greßganter Wasserkrum, der heute ein Brausmuseum, einen Regionalladen und eine Lederungskultur behenbergs, liegen am südlichen Rand der Stadt ganz auf dem Brandwanderweg 44. Ein Ausflug mit dem Rad lohnt sich von Niemeck aus auf die Feldsteinkirchen-radroute, die zu sieben flämingstypischen Kunstensteinsten führt.<br><br><a href=\"https://www.google.com/maps/place/Rathaus+Niemegk\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
     { id: 13, name: "13. Flämingbuchen", x: 650, y: 1174, description: "In dem großen Waldgebiet der Brandhelfe sind einige Inseln aus Buchen zu finden, wie in den Naturschutz-gebieten 'Flämingbuchen' und 'Spring'. Die Buchen-wanderwegen 70 oder 71 lassen sich diese landschaft-lichen Besonderheiten des Naturparks ertesten. Startpunkte sind die Bahnhöfe Medewitz und Merkenburg.<br><br><a href=\"https://www.google.com/maps/place/Naturschutzgebiet+Fl%C3%A4mingbuchen\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
     { id: 14, name: "14. Brautrummel mit Riesenstein", x: 1095, y: 995, description: "Wie ein kleiner Scetchel erfrrank im junges Brautpaar nach einem Gewitterregen in der Rummel, einem Trockental. Heute kann man auf einer Rundwanderung zum Rie-senste8n die besondere Natur in der Rummel erleben, Familienfotos auf dem Riesen-stein schleifen, ein Picknick im Grünen genießen und anschlie-ßend ein Nickerchen auf dem großen Feldbreit machen.<br><br><a href=\"https://www.google.com/maps/place/Riesenstein\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
     { id: 15, name: "15. Neuendorfer Rummel", x: 1400, y: 1340, description: "Die Rummeln, verzweigte, enge Trockentälchen, entstan-den nach Regien, Birnen und Weiden der Eiszeit. In Zeiten stetig weiter vereist. Wie grüne, bewaldete Finger stie-chen sie sich weit in die Agrarlandschaft hinein. Über den Burgenwanderweg oder den Rundwanderweg 40 kann man die üppig bewach-sene und stellengeise Neuen-dorfer Rummel durchwandern.<br><br><a href=\"https://www.google.com/maps/place/Neuendorfer+Rummel\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
     { id: 16, name: "16. Garrey mit Aussichtsplattform", x: 1490, y: 1430, description: "Die Landschaft rings um Garrey bietet fantastische Ausblicke, weite Täler und steile, aufgeschnittene Naturpfade. Deshalb 'krönt' eine Aussichtsplattform das alte Wasserwerk, das aufundig restauriert wurde und dem sich eine kleine Ausstellung befindet. Der Ausflug lässt sich sehr gut mit einer Wanderung in die Neuendorfer Rummel und einer Einkehr ins Café Leh-mann in Garrey verbinden.<br><br><a href=\"https://www.google.com/maps/place/Aussichtsturm+am+alten+Wasserwerk\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" }
+];
+
+const INTERACTIVE_ZONES = [
+    { id: 'thermal1', type: 'THERMAL' as const, x: 955, y: 725, radius: 150, strength: 0.03 },      // Hagelberg
+    { id: 'wind1', type: 'WIND' as const, x: 1575, y: 555, radius: 200, strength: 0.04, direction: 180 }, // Landschaftswiesen (from south)
+    { id: 'thermal2', type: 'THERMAL' as const, x: 1120, y: 1333, radius: 120, strength: 0.025 }, // Rabenstein
+    { id: 'wind2', type: 'WIND' as const, x: 700, y: 1000, radius: 250, strength: 0.035, direction: 270 } // Near Wiesenburg (from west)
 ];
 
 // Game State
@@ -47,11 +55,11 @@ const state = {
         totalDistance: 0,
     },
     input: {
-        keys: new Set(),
-        joystick: { active: false, angle: 0, magnitude: 0, touchId: null }
+        keys: new Set<string>(),
+        joystick: { active: false, angle: 0, magnitude: 0, touchId: null as number | null }
     },
     pois: POI_DATA.map(p => ({ ...p, visited: false })),
-    nearbyPOI: null,
+    nearbyPOI: null as (typeof POI_DATA[0] & { visited: boolean }) | null,
     visitedCount: 0,
     gameActive: false,
     startTime: 0,
@@ -61,8 +69,9 @@ const state = {
         landings: 0,
         totalDistance: 0
     },
-    achievements: new Set(),
-    minimapCtx: null as CanvasRenderingContext2D | null
+    achievements: new Set<string>(),
+    minimapCtx: null as CanvasRenderingContext2D | null,
+    waypoint: null as { x: number, y: number } | null,
 };
 
 // DOM Cache
@@ -72,6 +81,7 @@ const dom = {
     mapViewport: document.getElementById('map-viewport') as HTMLElement,
     mapImage: document.getElementById('map-image') as HTMLImageElement,
     balloonContainer: document.getElementById('balloon-container') as HTMLElement,
+    balloonImage: document.getElementById('balloon-image') as HTMLImageElement,
     directionIndicator: document.getElementById('direction-indicator') as HTMLElement,
     speedDisplay: document.getElementById('speed-display') as HTMLElement,
     poiCount: document.getElementById('poi-count') as HTMLElement,
@@ -105,7 +115,12 @@ const dom = {
     exploreButton: document.getElementById('explore-button') as HTMLButtonElement,
     achievementToast: document.getElementById('achievement-toast') as HTMLElement,
     achievementText: document.getElementById('achievement-text') as HTMLElement,
-    minimapCanvas: document.getElementById('minimap-canvas') as HTMLCanvasElement
+    minimapCanvas: document.getElementById('minimap-canvas') as HTMLCanvasElement,
+    waypointMarker: document.getElementById('waypoint-marker') as HTMLElement,
+    // Fix: Cast to unknown first for SVG elements to resolve TypeScript type conflict.
+    guidanceLine: document.getElementById('guidance-line') as unknown as SVGLineElement,
+    // Fix: Cast to unknown first for SVG elements to resolve TypeScript type conflict.
+    guidanceLineSvg: document.getElementById('guidance-line-svg') as unknown as SVGSVGElement,
 };
 
 // Audio System
@@ -119,29 +134,107 @@ function initAudio() {
     console.log("Audio disabled for offline compatibility.");
 }
 
+async function generateAndSetBalloonImage() {
+    if (dom.loadingScreen) {
+        const loadingText = dom.loadingScreen.querySelector('.loading-text') as HTMLElement;
+        if (loadingText) {
+            loadingText.textContent = 'Designing your balloon...';
+        }
+    }
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const generationResponse = await ai.models.generateImages({
+            model: 'imagen-4.0-generate-001',
+            prompt: 'A beautifully designed hot air balloon, vibrant colors, intricate patterns, fantasy style, icon for a map game, on a solid white background, clean simple vector art.',
+            config: {
+              numberOfImages: 1,
+              outputMimeType: 'image/png',
+              aspectRatio: '1:1',
+            },
+        });
+
+        const generatedImageBytes: string = generationResponse.generatedImages[0].image.imageBytes;
+
+        if (dom.loadingScreen) {
+            const loadingText = dom.loadingScreen.querySelector('.loading-text') as HTMLElement;
+            if (loadingText) {
+                loadingText.textContent = 'Finalizing balloon design...';
+            }
+        }
+        
+        const editResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [
+                    {
+                        inlineData: {
+                            data: generatedImageBytes,
+                            mimeType: 'image/png',
+                        },
+                    },
+                    {
+                        text: 'Perfectly cut out the hot air balloon from its solid background. Make the background fully transparent, leaving only the balloon with crisp, clean edges.',
+                    },
+                ],
+            },
+            config: {
+                responseModalities: [Modality.IMAGE],
+            },
+        });
+
+        let finalImageBytes = '';
+        if (editResponse.candidates?.[0]?.content?.parts) {
+            for (const part of editResponse.candidates[0].content.parts) {
+                if (part.inlineData?.data) {
+                    finalImageBytes = part.inlineData.data;
+                    break;
+                }
+            }
+        }
+        
+        if (finalImageBytes) {
+            const imageUrl = `data:image/png;base64,${finalImageBytes}`;
+            dom.balloonImage.src = imageUrl;
+        } else {
+            // Fallback to the original generated image if editing fails
+            const imageUrl = `data:image/png;base64,${generatedImageBytes}`;
+            dom.balloonImage.src = imageUrl;
+            console.warn("Image editing failed to return an image, using original.");
+        }
+
+    } catch(e) {
+        console.error("Failed to generate or edit balloon image, using fallback.", e);
+        // Fallback is already set in HTML, so no action needed.
+        if (dom.loadingScreen) {
+            const loadingText = dom.loadingScreen.querySelector('.loading-text') as HTMLElement;
+            if (loadingText) loadingText.textContent = 'Preparing for launch...';
+        }
+    }
+}
+
+
 async function loadImageAndStart() {
+    // Start balloon generation but don't wait for it
+    generateAndSetBalloonImage();
     try {
         if (!dom.mapImage) throw new Error('Map image element not found in the DOM.');
         
-        // The browser can be tricky with image loading.
-        // Using fetch gives us more control and better error reporting.
         const response = await fetch('images/map.jpg');
 
         if (!response.ok) {
-            // This will give a clear network error in the console.
             throw new Error(`Failed to fetch map image. Status: ${response.status} ${response.statusText}`);
         }
 
         const imageBlob = await response.blob();
         const imageUrl = URL.createObjectURL(imageBlob);
 
-        // Now, we set the source and wait for the browser to render it.
         dom.mapImage.onload = () => {
-            URL.revokeObjectURL(imageUrl); // Clean up the blob URL once the image is loaded.
+            URL.revokeObjectURL(imageUrl); 
             onMapLoaded();
         };
         dom.mapImage.onerror = (e) => {
-            URL.revokeObjectURL(imageUrl); // Clean up even on error.
+            URL.revokeObjectURL(imageUrl); 
             console.error("Error event on image element after setting blob URL:", e);
             onMapError();
         };
@@ -150,7 +243,7 @@ async function loadImageAndStart() {
 
     } catch (error) {
         console.error('Failed to load map resource:', error);
-        onMapError(); // Display a user-friendly error on the loading screen.
+        onMapError();
     }
 }
 
@@ -162,7 +255,6 @@ function init() {
         setupEventListeners();
         setupMinimap();
         
-        // Start the image loading process. The rest of the game will start from its success callback.
         loadImageAndStart();
 
     } catch (error) {
@@ -207,18 +299,23 @@ function createPOIMarkers() {
         marker.id = `poi-${poi.id}`;
         marker.style.left = `${poi.x}px`;
         marker.style.top = `${poi.y}px`;
+        // Add a title attribute for a standard browser tooltip. This is more accessible
+        // and mobile-friendly (shows on long-press) than a custom CSS hover label.
+        marker.title = poi.name.replace(/^\d+\.\s*/, '');
         
         const inner = document.createElement('div');
         inner.className = 'poi-marker-inner';
+        inner.textContent = String(poi.id);
         marker.appendChild(inner);
         
-        const label = document.createElement('div');
-        label.className = 'poi-marker-label';
-        label.textContent = poi.name;
-        marker.appendChild(label);
-        
-        marker.addEventListener('click', () => {
-            if (poi.visited) showPOIModal(poi);
+        marker.addEventListener('click', (e: MouseEvent) => {
+            e.stopPropagation(); // Prevent the map click listener from firing
+            if (poi.visited) {
+                showPOIModal(poi);
+            } else {
+                // Set unvisited POIs as a waypoint on click
+                state.waypoint = { x: poi.x, y: poi.y };
+            }
         });
         
         dom.mapViewport.appendChild(marker);
@@ -248,6 +345,7 @@ function populatePOIList() {
 function setupMinimap() {
     const canvas = dom.minimapCanvas;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     canvas.width = 180;
     canvas.height = 135;
     state.minimapCtx = ctx;
@@ -269,8 +367,30 @@ function setupEventListeners() {
     dom.nextPOIButton.addEventListener('click', navigateToNextPOI);
     dom.restartButton.addEventListener('click', restartGame);
     dom.exploreButton.addEventListener('click', freeFlightMode);
+    dom.mapViewport.addEventListener('click', handleSetWaypoint);
+    dom.waypointMarker.addEventListener('click', handleRemoveWaypoint);
     document.addEventListener('contextmenu', e => e.preventDefault());
 }
+
+// Waypoint Handlers
+function handleSetWaypoint(e: MouseEvent) {
+    // Don't set waypoint if clicking on an interactive element on the map
+    if ((e.target as HTMLElement).closest('.poi-marker, #balloon-container')) {
+        return;
+    }
+
+    const mapRect = dom.mapViewport.getBoundingClientRect();
+    const x = e.clientX - mapRect.left;
+    const y = e.clientY - mapRect.top;
+    
+    state.waypoint = { x, y };
+}
+
+function handleRemoveWaypoint(e: MouseEvent) {
+    e.stopPropagation(); // Prevent map click from firing and re-creating the waypoint
+    state.waypoint = null;
+}
+
 
 // Input Handlers
 function handleKeyDown(e: KeyboardEvent) {
@@ -299,7 +419,8 @@ function handleJoystickStart(e: TouchEvent) {
 
 function handleJoystickMove(e: TouchEvent) {
     if (!state.input.joystick.active) return;
-    for (let touch of e.touches) {
+    for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
         if (touch.identifier === state.input.joystick.touchId) {
             e.preventDefault();
             updateJoystick(touch.clientX, touch.clientY);
@@ -309,7 +430,8 @@ function handleJoystickMove(e: TouchEvent) {
 }
 
 function handleJoystickEnd(e: TouchEvent) {
-    for (let touch of e.changedTouches) {
+     for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
         if (touch.identifier === state.input.joystick.touchId) {
             e.preventDefault();
             resetJoystick();
@@ -375,6 +497,8 @@ function gameLoop(currentTime: number) {
 }
 
 function update(dt: number) {
+    applyInteractiveZoneEffects(dt);
+
     const balloon = state.balloon;
     if (state.startTime > 0) state.elapsedTime = Date.now() - state.startTime;
 
@@ -403,6 +527,7 @@ function update(dt: number) {
     balloon.vy += Math.sin(angleRad) * accel * dt;
 
     const drag = state.nearbyPOI ? 0.88 : CONFIG.DRAG;
+
     balloon.vx *= Math.pow(drag, dt);
     balloon.vy *= Math.pow(drag, dt);
 
@@ -430,8 +555,34 @@ function update(dt: number) {
     if (balloon.speed > state.stats.maxSpeed) state.stats.maxSpeed = balloon.speed;
 
     checkPOIProximity();
-    updateAudio();
 }
+
+function applyInteractiveZoneEffects(dt: number) {
+    const { balloon } = state;
+
+    for (const zone of INTERACTIVE_ZONES) {
+        const distance = Math.hypot(balloon.x - zone.x, balloon.y - zone.y);
+        if (distance < zone.radius) {
+            if (zone.type === 'THERMAL') {
+                const currentSpeed = Math.hypot(balloon.vx, balloon.vy);
+                if (currentSpeed > 0.1) {
+                    const boostX = (balloon.vx / currentSpeed) * zone.strength;
+                    const boostY = (balloon.vy / currentSpeed) * zone.strength;
+                    balloon.vx += boostX * dt;
+                    balloon.vy += boostY * dt;
+                } else { 
+                    balloon.vy -= zone.strength * dt;
+                }
+            } else if (zone.type === 'WIND') {
+                const angleRad = zone.direction * Math.PI / 180;
+                balloon.vx += Math.cos(angleRad) * zone.strength * dt;
+                balloon.vy += Math.sin(angleRad) * zone.strength * dt;
+            }
+            break; 
+        }
+    }
+}
+
 
 function checkPOIProximity() {
     let nearestPOI = null;
@@ -457,14 +608,7 @@ function checkPOIProximity() {
     }
 }
 
-function updateAudio() {
-    // Audio is disabled for offline compatibility
-    return;
-}
-
 function render() {
-    // The state.balloon.x/y represents the center. CSS transform applies to the top-left corner.
-    // We offset by -50% (of the element's size) to correctly center the balloon.
     dom.balloonContainer.style.transform = `translate(calc(${state.balloon.x}px - 50%), calc(${state.balloon.y}px - 50%))`;
     dom.directionIndicator.style.transform = `translateX(-50%) rotate(${state.balloon.angle + 90}deg)`;
     
@@ -482,6 +626,7 @@ function render() {
 
     centerCamera();
     renderMinimap();
+    renderWaypoint();
 }
 
 function renderMinimap() {
@@ -490,7 +635,7 @@ function renderMinimap() {
     const w = 180, h = 135;
     const scale = w / CONFIG.MAP_WIDTH;
     
-    ctx.fillStyle = 'rgba(244, 241, 232, 0.7)'; // Match background
+    ctx.fillStyle = 'rgba(244, 241, 232, 0.7)';
     ctx.fillRect(0, 0, w, h);
     ctx.strokeStyle = 'rgba(0,0,0,0.1)';
     ctx.strokeRect(0, 0, w, h);
@@ -514,6 +659,24 @@ function renderMinimap() {
     ctx.fill();
     ctx.restore();
 }
+
+function renderWaypoint() {
+    if (state.waypoint) {
+        dom.waypointMarker.style.left = `${state.waypoint.x}px`;
+        dom.waypointMarker.style.top = `${state.waypoint.y}px`;
+        dom.waypointMarker.classList.add('visible');
+
+        dom.guidanceLine.setAttribute('x1', String(state.balloon.x));
+        dom.guidanceLine.setAttribute('y1', String(state.balloon.y));
+        dom.guidanceLine.setAttribute('x2', String(state.waypoint.x));
+        dom.guidanceLine.setAttribute('y2', String(state.waypoint.y));
+        dom.guidanceLineSvg.style.display = 'block';
+    } else {
+        dom.waypointMarker.classList.remove('visible');
+        dom.guidanceLineSvg.style.display = 'none';
+    }
+}
+
 
 function centerCamera() {
     const viewportWidth = dom.mapContainer.clientWidth;
@@ -645,6 +808,7 @@ function restartGame() {
     state.elapsedTime = 0;
     state.stats = { maxSpeed: 0, landings: 0, totalDistance: 0 };
     state.achievements.clear();
+    state.waypoint = null;
     
     state.pois.forEach(poi => {
         poi.visited = false;
@@ -676,6 +840,4 @@ function formatTime(ms: number) {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-// Since the script is a module and at the end of the body, the DOM is already parsed.
-// We can call init() directly for a simpler and more reliable startup.
 init();
