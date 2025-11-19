@@ -1,5 +1,6 @@
 
 
+
 'use strict';
 
 import { GoogleGenAI, Modality } from "@google/genai";
@@ -629,6 +630,7 @@ function landAtPOI() {
     state.balloon.vy = 0;
 
     dom.balloonContainer.classList.add('landing');
+    // Explicitly clear transform to allow CSS animation to take precedence
     if (dom.balloonVisuals) {
         dom.balloonVisuals.style.transform = 'none'; 
     }
@@ -671,6 +673,9 @@ function resumeFlight() {
     
     dom.balloonContainer.classList.remove('landing');
     dom.balloonContainer.classList.add('takeoff');
+    if (dom.balloonVisuals) {
+        dom.balloonVisuals.style.transform = 'none'; 
+    }
         
     setTimeout(() => {
         dom.balloonContainer.classList.remove('takeoff');
