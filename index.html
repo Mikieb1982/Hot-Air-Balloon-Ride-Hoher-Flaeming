@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Hoher Fläming Hot Air Balloon Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
 <script type="importmap">
 {
@@ -30,36 +33,107 @@
         <div id="map-viewport">
             <img id="map-image" src="images/map.jpg" alt="Map of Hoher Fläming">
             
-            <!-- Waypoint & Guidance Line -->
-            <div id="waypoint-marker"></div>
-            <svg id="guidance-line-svg">
-                <line id="guidance-line" />
-            </svg>
-
+            <!-- Cartographic Overlays -->
+            <div id="map-grid-overlay"></div>
+            <div id="map-texture-overlay"></div>
+            
             <!-- Balloon -->
             <div id="balloon-container">
-                <div id="direction-indicator">
-                    <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 0 L7 10 L17 10 Z" fill="#3d352e" opacity="0.4"/>
-                    </svg>
-                </div>
                 <div id="balloon">
-                    <img id="balloon-image" src="images/hot-air-balloon.png" alt="Hot Air Balloon">
+                    <!-- Dynamic Shadow Element -->
+                    <div id="balloon-shadow"></div>
+                    
+                    <!-- Visual Wrapper for Tilt Animation -->
+                    <div id="balloon-visuals">
+                        <!-- High-Fidelity Balloon SVG -->
+                        <svg id="balloon-svg" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <!-- 3D Shading Gradient -->
+                                <radialGradient id="balloonShade" cx="30%" cy="30%" r="70%" fx="30%" fy="30%">
+                                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.4"/>
+                                    <stop offset="40%" stop-color="#ffffff" stop-opacity="0.1"/>
+                                    <stop offset="80%" stop-color="#000000" stop-opacity="0.1"/>
+                                    <stop offset="100%" stop-color="#000000" stop-opacity="0.3"/>
+                                </radialGradient>
+                                
+                                <!-- Basket Texture -->
+                                <pattern id="wicker" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+                                    <rect width="10" height="10" fill="#8d6e63"/>
+                                    <path d="M0 5h10 M5 0v10" stroke="#5d4037" stroke-width="2"/>
+                                </pattern>
+
+                                <!-- Flame Gradient -->
+                                <linearGradient id="flameGradient" x1="0.5" y1="1" x2="0.5" y2="0">
+                                    <stop offset="0%" stop-color="#ffeb3b"/> <!-- Yellow -->
+                                    <stop offset="60%" stop-color="#ff9800"/> <!-- Orange -->
+                                    <stop offset="100%" stop-color="#f44336" stop-opacity="0"/> <!-- Red fading out -->
+                                </linearGradient>
+                            </defs>
+
+                            <!-- Ropes (Back) -->
+                            <path d="M60 150 L85 210" stroke="#5d4037" stroke-width="1.5"/>
+                            <path d="M140 150 L115 210" stroke="#5d4037" stroke-width="1.5"/>
+
+                            <!-- BALLOON ENVELOPE -->
+                            <g transform="translate(100, 90)">
+                                <!-- Outer Panels (Dark Navy) -->
+                                <path d="M0 -85 C-55 -85 -90 -40 -90 10 C-90 55 -50 85 -15 110 L15 110 C50 85 90 55 90 10 C90 -40 55 -85 0 -85 Z" fill="#1d3557"/>
+                                
+                                <!-- Mid Side Panels (Red) -->
+                                <path d="M0 -85 C-40 -85 -70 -40 -70 10 C-70 50 -35 80 -12 108 L12 108 C35 80 70 50 70 10 C70 -40 40 -85 0 -85 Z" fill="#e63946"/>
+
+                                <!-- Inner Side Panels (Cream/White) -->
+                                <path d="M0 -85 C-25 -85 -45 -40 -45 10 C-45 45 -20 75 -8 106 L8 106 C20 75 45 45 45 10 C45 -40 25 -85 0 -85 Z" fill="#f1faee"/>
+
+                                <!-- Center Panel (Navy) -->
+                                <path d="M0 -85 C-10 -85 -20 -40 -20 10 C-20 40 -10 70 -4 105 L4 105 C10 70 20 40 20 10 C20 -40 10 -85 0 -85 Z" fill="#1d3557"/>
+                                
+                                <!-- Horizontal Band (Decorative) -->
+                                <path d="M-68 20 Q0 40 68 20 L68 5 Q0 25 -68 5 Z" fill="#e63946" opacity="0.9" style="mix-blend-mode: multiply"/>
+
+                                <!-- 3D Overlay -->
+                                <path d="M0 -85 C-55 -85 -90 -40 -90 10 C-90 55 -50 85 -15 110 L15 110 C50 85 90 55 90 10 C90 -40 55 -85 0 -85 Z" fill="url(#balloonShade)"/>
+                            </g>
+
+                            <!-- Burner Flame (Animated) -->
+                            <path class="burner-flame" d="M95 205 Q100 180 105 205 Q100 215 95 205" fill="url(#flameGradient)"/>
+
+                            <!-- Basket Assembly -->
+                            <g transform="translate(85, 210)">
+                                <!-- Ropes connecting to hoop -->
+                                <line x1="0" y1="0" x2="5" y2="15" stroke="#5d4037" stroke-width="2"/>
+                                <line x1="30" y1="0" x2="25" y2="15" stroke="#5d4037" stroke-width="2"/>
+                                
+                                <!-- The Basket -->
+                                <rect x="0" y="15" width="30" height="25" rx="4" fill="url(#wicker)"/>
+                                <!-- Basket Rim -->
+                                <rect x="-2" y="13" width="34" height="5" rx="2" fill="#4e342e"/>
+                                <!-- Sandbags -->
+                                <g fill="#a1887f" stroke="#4e342e" stroke-width="1">
+                                    <circle cx="-2" cy="25" r="4"/>
+                                    <circle cx="32" cy="25" r="4"/>
+                                    <circle cx="-2" cy="32" r="4"/>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
                 </div>
             </div>
         </div>
+        <!-- Vignette Overlay -->
+        <div id="vignette"></div>
     </div>
 
     <!-- HUD -->
     <div id="hud-container">
         <div class="hud-left">
-            <div class="hud-panel">
+            <div class="hud-panel info-panel">
                 <div class="hud-row">
                     <span class="hud-label">Speed</span>
                     <span class="hud-value" id="speed-display">0.0</span>
                 </div>
                 <div class="hud-row">
-                    <span class="hud-label">POIs Visited</span>
+                    <span class="hud-label">Visited</span>
                     <span class="hud-value" id="poi-count">0/16</span>
                 </div>
                  <div class="hud-row">
@@ -71,13 +145,17 @@
 
 
         <div class="hud-right">
-            <div class="hud-panel">
-                <div class="hud-row">
-                    <span class="hud-label">Heading</span>
-                    <span class="hud-value" id="heading-display">0°</span>
+            <div class="hud-panel compass-panel">
+                <div class="hud-row centered-row">
+                    <span class="hud-value small" id="heading-display">0°</span>
                 </div>
                 <div id="compass">
-                    <div id="compass-ring">N</div>
+                    <div id="compass-rose">
+                        <div class="cardinal n">N</div>
+                        <div class="cardinal e">E</div>
+                        <div class="cardinal s">S</div>
+                        <div class="cardinal w">W</div>
+                    </div>
                     <div id="compass-needle"></div>
                 </div>
             </div>
@@ -92,8 +170,13 @@
         </div>
         
         <div class="action-buttons">
-            <button class="action-button" id="land-button">Land</button>
-            <button class="action-button secondary visible" id="menu-button" title="Menu">☰</button>
+            <button class="action-button primary" id="land-button">
+                <span class="icon">⚓</span>
+                <span class="label">Land</span>
+            </button>
+            <button class="action-button secondary" id="menu-button" title="Menu">
+                <span class="icon">☰</span>
+            </button>
         </div>
     </div>
 
@@ -142,22 +225,24 @@
     <div id="poi-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-icon" id="modal-icon">1</div>
+                <div class="modal-icon-badge" id="modal-icon">1</div>
                 <h2 id="poi-modal-title">Point of Interest</h2>
             </div>
-            <p class="modal-description" id="poi-modal-description"></p>
-            <div class="modal-stats">
-                <div class="modal-stat">
-                    <div class="modal-stat-value" id="modal-visit-time">--:--</div>
-                    <div class="modal-stat-label">Visit Time</div>
-                </div>
-                <div class="modal-stat">
-                    <div class="modal-stat-value" id="modal-poi-number">1/16</div>
-                    <div class="modal-stat-label">Progress</div>
+            <div class="modal-body">
+                <p class="modal-description" id="poi-modal-description"></p>
+                <div class="modal-stats">
+                    <div class="modal-stat">
+                        <div class="modal-stat-value" id="modal-visit-time">--:--</div>
+                        <div class="modal-stat-label">Visit Time</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-value" id="modal-poi-number">1/16</div>
+                        <div class="modal-stat-label">Progress</div>
+                    </div>
                 </div>
             </div>
-            <div class="modal-buttons">
-                <button class="modal-button" id="continue-button">Continue Flying</button>
+            <div class="modal-footer">
+                <button class="modal-button primary" id="continue-button">Continue Flying</button>
                 <button class="modal-button secondary" id="next-poi-button">Next POI →</button>
             </div>
         </div>
@@ -165,9 +250,9 @@
 
     <!-- Completion Modal -->
     <div id="completion-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-icon">🏆</div>
+        <div class="modal-content center-text">
+            <div class="modal-header vertical">
+                <div class="modal-icon-large">🏆</div>
                 <h2>Mission Complete!</h2>
             </div>
             <p class="modal-description">
@@ -180,7 +265,7 @@
                 </div>
                 <div class="modal-stat">
                     <div class="modal-stat-value" id="final-distance">0 km</div>
-                    <div class="stat-label">Distance Flown</div>
+                    <div class="stat-label">Distance</div>
                 </div>
                 <div class="modal-stat">
                     <div class="modal-stat-value" id="final-speed">0</div>
@@ -188,7 +273,7 @@
                 </div>
             </div>
             <div class="modal-buttons">
-                <button class="modal-button" id="restart-button">New Mission</button>
+                <button class="modal-button primary" id="restart-button">New Mission</button>
                 <button class="modal-button secondary" id="explore-button">Free Flight</button>
             </div>
         </div>
@@ -196,8 +281,10 @@
 
     <!-- Achievement Toast -->
     <div id="achievement-toast" class="achievement-toast">
-        <span class="achievement-icon">🏆</span>
-        <span class="achievement-text" id="achievement-text">Achievement Unlocked!</span>
+        <div class="toast-content">
+            <span class="achievement-icon">🏆</span>
+            <span class="achievement-text" id="achievement-text">Achievement Unlocked!</span>
+        </div>
     </div>
 
     <script type="module" src="index.tsx"></script>

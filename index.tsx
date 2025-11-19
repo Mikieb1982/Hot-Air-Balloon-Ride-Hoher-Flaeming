@@ -1,3 +1,4 @@
+
 'use strict';
 
 import { GoogleGenAI, Modality } from "@google/genai";
@@ -36,13 +37,6 @@ const POI_DATA = [
     { id: 16, name: "16. Garrey mit Aussichtsplattform", x: 1490, y: 1430, description: "Die Landschaft rings um Garrey bietet fantastische Ausblicke, weite Täler und steile, aufgeschnittene Naturpfade. Deshalb 'krönt' eine Aussichtsplattform das alte Wasserwerk, das aufundig restauriert wurde und dem sich eine kleine Ausstellung befindet. Der Ausflug lässt sich sehr gut mit einer Wanderung in die Neuendorfer Rummel und einer Einkehr ins Café Leh-mann in Garrey verbinden.<br><br><a href=\"https://www.google.com/maps/place/Aussichtsturm+am+alten+Wasserwerk\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" }
 ];
 
-const INTERACTIVE_ZONES = [
-    { id: 'thermal1', type: 'THERMAL' as const, x: 955, y: 725, radius: 150, strength: 0.03 },      // Hagelberg
-    { id: 'wind1', type: 'WIND' as const, x: 1575, y: 555, radius: 200, strength: 0.04, direction: 180 }, // Landschaftswiesen (from south)
-    { id: 'thermal2', type: 'THERMAL' as const, x: 1120, y: 1333, radius: 120, strength: 0.025 }, // Rabenstein
-    { id: 'wind2', type: 'WIND' as const, x: 700, y: 1000, radius: 250, strength: 0.035, direction: 270 } // Near Wiesenburg (from west)
-];
-
 // Game State
 const state = {
     balloon: {
@@ -71,7 +65,6 @@ const state = {
     },
     achievements: new Set<string>(),
     minimapCtx: null as CanvasRenderingContext2D | null,
-    waypoint: null as { x: number, y: number } | null,
 };
 
 // DOM Cache
@@ -81,8 +74,7 @@ const dom = {
     mapViewport: document.getElementById('map-viewport') as HTMLElement,
     mapImage: document.getElementById('map-image') as HTMLImageElement,
     balloonContainer: document.getElementById('balloon-container') as HTMLElement,
-    balloonImage: document.getElementById('balloon-image') as HTMLImageElement,
-    directionIndicator: document.getElementById('direction-indicator') as HTMLElement,
+    balloonVisuals: document.getElementById('balloon-visuals') as HTMLElement,
     speedDisplay: document.getElementById('speed-display') as HTMLElement,
     poiCount: document.getElementById('poi-count') as HTMLElement,
     timeDisplay: document.getElementById('time-display') as HTMLElement,
@@ -116,11 +108,6 @@ const dom = {
     achievementToast: document.getElementById('achievement-toast') as HTMLElement,
     achievementText: document.getElementById('achievement-text') as HTMLElement,
     minimapCanvas: document.getElementById('minimap-canvas') as HTMLCanvasElement,
-    waypointMarker: document.getElementById('waypoint-marker') as HTMLElement,
-    // Fix: Cast to unknown first for SVG elements to resolve TypeScript type conflict.
-    guidanceLine: document.getElementById('guidance-line') as unknown as SVGLineElement,
-    // Fix: Cast to unknown first for SVG elements to resolve TypeScript type conflict.
-    guidanceLineSvg: document.getElementById('guidance-line-svg') as unknown as SVGSVGElement,
 };
 
 // Audio System
@@ -134,89 +121,7 @@ function initAudio() {
     console.log("Audio disabled for offline compatibility.");
 }
 
-async function generateAndSetBalloonImage() {
-    if (dom.loadingScreen) {
-        const loadingText = dom.loadingScreen.querySelector('.loading-text') as HTMLElement;
-        if (loadingText) {
-            loadingText.textContent = 'Designing your balloon...';
-        }
-    }
-
-    try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const generationResponse = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: 'A beautifully designed hot air balloon, vibrant colors, intricate patterns, fantasy style, icon for a map game, on a solid white background, clean simple vector art.',
-            config: {
-              numberOfImages: 1,
-              outputMimeType: 'image/png',
-              aspectRatio: '1:1',
-            },
-        });
-
-        const generatedImageBytes: string = generationResponse.generatedImages[0].image.imageBytes;
-
-        if (dom.loadingScreen) {
-            const loadingText = dom.loadingScreen.querySelector('.loading-text') as HTMLElement;
-            if (loadingText) {
-                loadingText.textContent = 'Finalizing balloon design...';
-            }
-        }
-        
-        const editResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-                parts: [
-                    {
-                        inlineData: {
-                            data: generatedImageBytes,
-                            mimeType: 'image/png',
-                        },
-                    },
-                    {
-                        text: 'Perfectly cut out the hot air balloon from its solid background. Make the background fully transparent, leaving only the balloon with crisp, clean edges.',
-                    },
-                ],
-            },
-            config: {
-                responseModalities: [Modality.IMAGE],
-            },
-        });
-
-        let finalImageBytes = '';
-        if (editResponse.candidates?.[0]?.content?.parts) {
-            for (const part of editResponse.candidates[0].content.parts) {
-                if (part.inlineData?.data) {
-                    finalImageBytes = part.inlineData.data;
-                    break;
-                }
-            }
-        }
-        
-        if (finalImageBytes) {
-            const imageUrl = `data:image/png;base64,${finalImageBytes}`;
-            dom.balloonImage.src = imageUrl;
-        } else {
-            // Fallback to the original generated image if editing fails
-            const imageUrl = `data:image/png;base64,${generatedImageBytes}`;
-            dom.balloonImage.src = imageUrl;
-            console.warn("Image editing failed to return an image, using original.");
-        }
-
-    } catch(e) {
-        console.error("Failed to generate or edit balloon image, using fallback.", e);
-        // Fallback is already set in HTML, so no action needed.
-        if (dom.loadingScreen) {
-            const loadingText = dom.loadingScreen.querySelector('.loading-text') as HTMLElement;
-            if (loadingText) loadingText.textContent = 'Preparing for launch...';
-        }
-    }
-}
-
-
 async function loadImageAndStart() {
-    // Start balloon generation but don't wait for it
-    generateAndSetBalloonImage();
     try {
         if (!dom.mapImage) throw new Error('Map image element not found in the DOM.');
         
@@ -282,7 +187,7 @@ function onMapLoaded() {
 
 function onMapError() {
     dom.loadingScreen.innerHTML = `
-        <div class="loading-content" style="color: #c94a4a;">
+        <div class="loading-content" style="color: #e63946;">
             <div class="loading-balloon" style="animation: none;">⚠️</div>
             <div class="loading-text">Error: Map failed to load.</div>
             <p style="font-size: 14px; color: var(--text-secondary); max-width: 300px; text-align: center;">
@@ -299,22 +204,16 @@ function createPOIMarkers() {
         marker.id = `poi-${poi.id}`;
         marker.style.left = `${poi.x}px`;
         marker.style.top = `${poi.y}px`;
-        // Add a title attribute for a standard browser tooltip. This is more accessible
-        // and mobile-friendly (shows on long-press) than a custom CSS hover label.
         marker.title = poi.name.replace(/^\d+\.\s*/, '');
         
         const inner = document.createElement('div');
         inner.className = 'poi-marker-inner';
-        inner.textContent = String(poi.id);
         marker.appendChild(inner);
         
         marker.addEventListener('click', (e: MouseEvent) => {
-            e.stopPropagation(); // Prevent the map click listener from firing
+            e.stopPropagation();
             if (poi.visited) {
                 showPOIModal(poi);
-            } else {
-                // Set unvisited POIs as a waypoint on click
-                state.waypoint = { x: poi.x, y: poi.y };
             }
         });
         
@@ -329,10 +228,9 @@ function populatePOIList() {
         item.className = 'poi-item';
         item.id = `poi-list-${poi.id}`;
         item.innerHTML = `
-            <div class="poi-item-header">
-                <div class="poi-item-name">${poi.name}</div>
-                <div class="poi-item-status">${poi.visited ? '✓' : ''}</div>
-            </div>`;
+            <div class="poi-item-name">${poi.name}</div>
+            <div class="poi-item-status">${poi.visited ? '✓' : ''}</div>
+        `;
         
         item.addEventListener('click', () => {
             centerCameraOn(poi.x, poi.y);
@@ -346,8 +244,8 @@ function setupMinimap() {
     const canvas = dom.minimapCanvas;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    canvas.width = 180;
-    canvas.height = 135;
+    canvas.width = 200; 
+    canvas.height = 150;
     state.minimapCtx = ctx;
 }
 
@@ -367,28 +265,7 @@ function setupEventListeners() {
     dom.nextPOIButton.addEventListener('click', navigateToNextPOI);
     dom.restartButton.addEventListener('click', restartGame);
     dom.exploreButton.addEventListener('click', freeFlightMode);
-    dom.mapViewport.addEventListener('click', handleSetWaypoint);
-    dom.waypointMarker.addEventListener('click', handleRemoveWaypoint);
     document.addEventListener('contextmenu', e => e.preventDefault());
-}
-
-// Waypoint Handlers
-function handleSetWaypoint(e: MouseEvent) {
-    // Don't set waypoint if clicking on an interactive element on the map
-    if ((e.target as HTMLElement).closest('.poi-marker, #balloon-container')) {
-        return;
-    }
-
-    const mapRect = dom.mapViewport.getBoundingClientRect();
-    const x = e.clientX - mapRect.left;
-    const y = e.clientY - mapRect.top;
-    
-    state.waypoint = { x, y };
-}
-
-function handleRemoveWaypoint(e: MouseEvent) {
-    e.stopPropagation(); // Prevent map click from firing and re-creating the waypoint
-    state.waypoint = null;
 }
 
 
@@ -497,8 +374,6 @@ function gameLoop(currentTime: number) {
 }
 
 function update(dt: number) {
-    applyInteractiveZoneEffects(dt);
-
     const balloon = state.balloon;
     if (state.startTime > 0) state.elapsedTime = Date.now() - state.startTime;
 
@@ -557,33 +432,6 @@ function update(dt: number) {
     checkPOIProximity();
 }
 
-function applyInteractiveZoneEffects(dt: number) {
-    const { balloon } = state;
-
-    for (const zone of INTERACTIVE_ZONES) {
-        const distance = Math.hypot(balloon.x - zone.x, balloon.y - zone.y);
-        if (distance < zone.radius) {
-            if (zone.type === 'THERMAL') {
-                const currentSpeed = Math.hypot(balloon.vx, balloon.vy);
-                if (currentSpeed > 0.1) {
-                    const boostX = (balloon.vx / currentSpeed) * zone.strength;
-                    const boostY = (balloon.vy / currentSpeed) * zone.strength;
-                    balloon.vx += boostX * dt;
-                    balloon.vy += boostY * dt;
-                } else { 
-                    balloon.vy -= zone.strength * dt;
-                }
-            } else if (zone.type === 'WIND') {
-                const angleRad = zone.direction * Math.PI / 180;
-                balloon.vx += Math.cos(angleRad) * zone.strength * dt;
-                balloon.vy += Math.sin(angleRad) * zone.strength * dt;
-            }
-            break; 
-        }
-    }
-}
-
-
 function checkPOIProximity() {
     let nearestPOI = null;
     let minDistance = Infinity;
@@ -609,15 +457,27 @@ function checkPOIProximity() {
 }
 
 function render() {
-    dom.balloonContainer.style.transform = `translate(calc(${state.balloon.x}px - 50%), calc(${state.balloon.y}px - 50%))`;
-    dom.directionIndicator.style.transform = `translateX(-50%) rotate(${state.balloon.angle + 90}deg)`;
+    dom.balloonContainer.style.transform = `translate(calc(${state.balloon.x}px - 50%), calc(${state.balloon.y}px - 100%))`;
+    
+    const sunCycle = (state.elapsedTime % 120000) / 120000 * Math.PI * 2;
+    const shadowDist = 40; 
+    const shadowX = Math.cos(sunCycle) * shadowDist;
+    const shadowY = Math.sin(sunCycle) * (shadowDist * 0.5);
+    
+    dom.balloonContainer.style.setProperty('--shadow-x', `${shadowX}px`);
+    dom.balloonContainer.style.setProperty('--shadow-y', `${shadowY}px`);
+    
+    if (dom.balloonVisuals && state.gameActive) {
+        const tilt = state.balloon.vx * 3;
+        dom.balloonVisuals.style.transform = `rotate(${tilt}deg)`;
+    }
     
     dom.speedDisplay.textContent = state.balloon.speed.toFixed(1);
     dom.poiCount.textContent = `${state.visitedCount}/16`;
     dom.timeDisplay.textContent = formatTime(state.elapsedTime);
     const heading = Math.round((state.balloon.angle + 360) % 360);
     dom.headingDisplay.textContent = `${heading}°`;
-    dom.compassNeedle.style.transform = `rotate(${state.balloon.angle}deg)`;
+    dom.compassNeedle.style.transform = `translate(-50%, -50%) rotate(${state.balloon.angle}deg)`;
 
     dom.statDistance.textContent = state.stats.totalDistance.toFixed(1);
     dom.statMaxSpeed.textContent = state.stats.maxSpeed.toFixed(1);
@@ -626,57 +486,44 @@ function render() {
 
     centerCamera();
     renderMinimap();
-    renderWaypoint();
 }
 
 function renderMinimap() {
     const ctx = state.minimapCtx;
     if (!ctx) return;
-    const w = 180, h = 135;
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
     const scale = w / CONFIG.MAP_WIDTH;
     
-    ctx.fillStyle = 'rgba(244, 241, 232, 0.7)';
+    ctx.clearRect(0, 0, w, h);
+    
+    // Background matching the lighter map theme
+    ctx.fillStyle = '#e0e0e0'; 
     ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-    ctx.strokeRect(0, 0, w, h);
     
     state.pois.forEach(poi => {
-        ctx.fillStyle = poi.visited ? '#5a9a68' : '#c94a4a';
+        // Only show visited POIs to maintain discovery mechanic
+        if (!poi.visited) return;
+
+        ctx.fillStyle = '#2a9d8f'; // Success Green
         ctx.beginPath();
-        ctx.arc(poi.x * scale, poi.y * scale, 2, 0, Math.PI * 2);
+        ctx.arc(poi.x * scale, poi.y * scale, 3, 0, Math.PI * 2);
         ctx.fill();
     });
     
     ctx.save();
     ctx.translate(state.balloon.x * scale, state.balloon.y * scale);
     ctx.rotate((state.balloon.angle + 90) * Math.PI / 180);
-    ctx.fillStyle = '#3d352e';
+    // Balloon marker
+    ctx.fillStyle = '#003049';
     ctx.beginPath();
-    ctx.moveTo(0, -4);
-    ctx.lineTo(-3, 3);
-    ctx.lineTo(3, 3);
+    ctx.moveTo(0, -6);
+    ctx.lineTo(-5, 5);
+    ctx.lineTo(5, 5);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
 }
-
-function renderWaypoint() {
-    if (state.waypoint) {
-        dom.waypointMarker.style.left = `${state.waypoint.x}px`;
-        dom.waypointMarker.style.top = `${state.waypoint.y}px`;
-        dom.waypointMarker.classList.add('visible');
-
-        dom.guidanceLine.setAttribute('x1', String(state.balloon.x));
-        dom.guidanceLine.setAttribute('y1', String(state.balloon.y));
-        dom.guidanceLine.setAttribute('x2', String(state.waypoint.x));
-        dom.guidanceLine.setAttribute('y2', String(state.waypoint.y));
-        dom.guidanceLineSvg.style.display = 'block';
-    } else {
-        dom.waypointMarker.classList.remove('visible');
-        dom.guidanceLineSvg.style.display = 'none';
-    }
-}
-
 
 function centerCamera() {
     const viewportWidth = dom.mapContainer.clientWidth;
@@ -698,31 +545,38 @@ function centerCameraOn(x: number, y: number) {
     centerCamera();
 }
 
-// Game Actions
 function landAtPOI() {
     if (!state.nearbyPOI || !state.gameActive) return;
     
     state.gameActive = false;
     state.balloon.vx = 0;
     state.balloon.vy = 0;
-    state.stats.landings++;
-    
-    const poi = state.nearbyPOI;
-    if (!poi.visited) {
-        poi.visited = true;
-        state.visitedCount++;
-        document.getElementById(`poi-${poi.id}`)?.classList.add('visited');
-        const listItem = document.getElementById(`poi-list-${poi.id}`);
-        if(listItem) {
-            listItem.classList.add('visited');
-            (listItem.querySelector('.poi-item-status') as HTMLElement).textContent = '✓';
-        }
-        checkAchievements();
+
+    dom.balloonContainer.classList.add('landing');
+    if (dom.balloonVisuals) {
+        dom.balloonVisuals.style.transform = 'none'; 
     }
-    
-    dom.landButton.classList.remove('visible');
-    showPOIModal(poi);
-    if (state.visitedCount === 16) setTimeout(showCompletionModal, 1500);
+
+    setTimeout(() => {
+        state.stats.landings++;
+        const poi = state.nearbyPOI;
+        if (poi && !poi.visited) {
+            poi.visited = true;
+            state.visitedCount++;
+            document.getElementById(`poi-${poi.id}`)?.classList.add('visited');
+            const listItem = document.getElementById(`poi-list-${poi.id}`);
+            if(listItem) {
+                listItem.classList.add('visited');
+                (listItem.querySelector('.poi-item-status') as HTMLElement).textContent = '✓';
+            }
+            checkAchievements();
+        }
+        
+        dom.landButton.classList.remove('visible');
+        if (poi) showPOIModal(poi);
+        if (state.visitedCount === 16) setTimeout(showCompletionModal, 1500);
+
+    }, 2000);
 }
 
 function showPOIModal(poi: typeof POI_DATA[0] & { visited: boolean }) {
@@ -738,7 +592,15 @@ function showPOIModal(poi: typeof POI_DATA[0] & { visited: boolean }) {
 
 function resumeFlight() {
     dom.poiModal.classList.remove('active');
-    state.gameActive = true;
+    
+    dom.balloonContainer.classList.remove('landing');
+    dom.balloonContainer.classList.add('takeoff');
+        
+    setTimeout(() => {
+        dom.balloonContainer.classList.remove('takeoff');
+        state.gameActive = true;
+    }, 1500);
+
     state.nearbyPOI = null;
     document.querySelectorAll('.poi-marker.nearby').forEach(m => m.classList.remove('nearby'));
 }
@@ -808,8 +670,12 @@ function restartGame() {
     state.elapsedTime = 0;
     state.stats = { maxSpeed: 0, landings: 0, totalDistance: 0 };
     state.achievements.clear();
-    state.waypoint = null;
     
+    dom.balloonContainer.classList.remove('landing', 'takeoff');
+    if (dom.balloonVisuals) {
+        dom.balloonVisuals.style.transform = '';
+    }
+
     state.pois.forEach(poi => {
         poi.visited = false;
         document.getElementById(`poi-${poi.id}`)?.classList.remove('visited', 'nearby');
