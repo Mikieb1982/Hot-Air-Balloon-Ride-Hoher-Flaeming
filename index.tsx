@@ -1,4 +1,5 @@
 
+
 'use strict';
 
 import { GoogleGenAI, Modality } from "@google/genai";
@@ -15,26 +16,29 @@ const CONFIG = {
     TURN_SPEED: 2.5,
     LANDING_RADIUS: 70,
     JOYSTICK_RADIUS: 55,
+    MIN_ZOOM: 0.4,
+    MAX_ZOOM: 1.5,
+    ZOOM_STEP: 0.2,
 };
 
 // POI Data - Coordinates adjusted for precise map alignment
 const POI_DATA = [
-    { id: 1, name: "1. Stadt und Burg Ziesar", x: 472, y: 130, description: "Auf der Burg Ziesar befindet sich das Museum für brandenburgische Kirchen- und Kulturgeschichte des Mittelalters und der Reformationszeit. Sehenswert sind hier auch die Schlosskapelle und der sehr gut erhaltene Burgfriede - auch Schlosskappelle und der der weiße Blick vom Storchenturm über den ziesarschen Kiez.<br><br><a href=\"https://www.google.com/maps/place/Burg+Ziesar\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 2, name: "2. Gutspark Dahlen", x: 780, y: 355, description: "Der Gutspark Dahlen ist ein Waldstück seltener botanischer Wundt. Wobei die Spatziergänge um den Schwanensee die Besucher verzaubern. Zudem kann der Bauengarten Kultur- und Garttern und Duftrlanzen besucht werden. Gleich gegenüber dem Gutspark steht, etwas verborgen, die Friedhofswehrkirche.<br><br><a href=\"https://www.google.com/maps/place/Gutspark+Dahlen\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 3, name: "3. Klein Briesener Bach", x: 995, y: 250, description: "Der Artesische Brunnen ist im Naturschutzgebiet Klein Briesener Bach zu finden. Das Wasser steigt hier nur durch den Erd-Eigendruck hervor und wird durch eine Rinne Briesenfließ zu geführt. Wunderrode können dem Schönheiten Bach auf dem Burgerswanderweg bis zum Aussichtsturm 'Schöne Aussicht'.<br><br><a href=\"https://www.google.com/maps/place/Artesischer+Brunnen\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 4, name: "4. Paradies Dippmannsdorf", x: 1340, y: 275, description: "Hier scheint sich die einigen Dutzend Quellen glaskares Wasser, das die Mühlenbäche speist. Der sonstigen Buchen, Eichen und Birken bestehende Quellkopf wurde sprachlich erschlossen. Ein Spaziergang lohnt sich zu jeder Jahreszeit und lässt sich gut mit einer Wanderung auf dem Kinderferienflugplad verlieren - dem den hier auf dem Burgen-wanderweg verlauft.<br><br><a href=\"https://www.google.com/maps/place/Paradies\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 5, name: "5. Töpferort Görzke", x: 415, y: 495, description: "Ein Besuch der kleinen Museen und des Hafischens auf dem Handwerkerhof, ein kleiner Bummel entlang der Bauernhöfe hinüber zum Städtchen Ziesar und die Einkaufsmöglichkeiten in fuuf Töpfereien können die Besucher des Flämingdorfes. Auf dem Töpferwanderweg werden Wandernde mit weit-läufigen Ausblicken auf das Tal der Buckau und die umliegende Fläminglandschaft belohnt.<br><br><a href=\"https://www.google.com/maps/place/Handwerkerhof+G%C3%B6rzke\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 6, name: "6. Hagelberg", x: 955, y: 725, description: "Der Hagelberg, ein echter 'Zweitausender', lädt zum Ein-stieg ins Gipfelbuch ein - nicht ohne Grund wird der Land-strich rings um Klein Glien auch 'Klein-Mittelgebirge' genannt. Für das 'Aufstieg' zum Gipfelkreuz wird mit einem Ausblick auf schönen Blick über die Fläminglandschaft belohnt. Unweit davon öffnet am Wochenende auf dem historischen Gasthof in Klein Glien ein Café für Ausflugsinnen und Ausflüger.<br><br><a href=\"https://www.google.com/maps/place/Hagelberg\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 7, name: "7. Bad Belzig mit Burg Eisenhardt", x: 1364, y: 605, description: "Auf der komplett erhaltenen, die 1000-jährige Geschichte der Stadt hautnah erlunden. Vom Butterturm bietet sich wohl der schönste Ausblick auf Stadt und Urstromtal. Unterhalb der Burg befindet sich die Burgwiesen, auf denen die bedrohfreie trachten Großtrappen einen stillen Unterschlupf weckt. In der SteinTherme sorgt jodihaltiges Thermalwasser für gesunde Entspannung.<br><br><a href=\"https://www.google.com/maps/place/Burg+Eisenhardt\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 8, name: "8. Aussichtspunkt Belziger Landschaftswiesen", x: 1575, y: 555, description: "Am Burgenwanderweg 43 gelegen, liest sich ein besonders eindrückender Blick in das Niederungsgebiet der Belziger Land-schaftswiesen. Dort befindet sich eines der wichtigsten Vogelschutzgebiete Brandenburgs. Wenn im Winterhalbjahr Großtrappen pflichtliche Nahrung suchen, bieten sich vom Rastplatz aus sehr gute Beobachtungsmög-lichkeiten.<br><br><a href=\"https://www.google.com/maps/place/Aussichtsturm+Belziger+Landschaftswiesen\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 9, name: "9. Wiesenburg mit Schloss und Park", x: 765, y: 855, description: "Das Schloss erhebt sich heute über das Westende des 19. Jahrhunderts. Vom Schlossturm hat man eine ein-druckvolle Aussicht auf Wiesenburg und seinen Parkburg. Der aufstützende als Landschaftspark gestaltete Schlosspark ist der bedeutendste Aussage seiner Art im Hohen Fläming und lädt zum ausgiebigen Samsaui und Wohlritz. Bis zum Bahnhof erstrekt sich diese Anlage, durch die aus dem Kunstwanderweg führt.<br><br><a href=\"https://www.google.com/maps/place/Schloss+Wiesenburg\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 10, name: "10. Naturparkzentrum Hoher Fläming", x: 1165, y: 1370, description: "Das Besucherinformationszentrum ist eine zentrale Anlauf-stelle für alle Gäste. Hier erhält man die besten Tipps für Ausflüge in und durch Hohen Fläming und kann Fahrräder ausleihen. Neben dem Fläming-Laden mit regionalen Produkten lädt eine spannenrde Naturparkzentrums ausstellung und einen 'Garten der Sinne'. Direkt vor dem Naturparkzentrum hält der bus der genannten.<br><br><a href=\"https://www.google.com/maps/place/Naturparkzentrum+Hoher+Fl%C3%A4ming\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 11, name: "11. Raben mit Burg Rabenstein", x: 1120, y: 1333, description: "Auf der Raben blicken 'legen' legt die süchlichste der Fläming-burgen, die Hohenburg Rabenstein. Von der Burg führt ein Friedlingspfad durch das Naturschutzgebiet Rabenstein hinunter ins Dorf und bis zum Naturparkzentrum. Die topsteller offene Feldsein-kirche kann auch besucht werden. Der Gasthof Hemmerling be-wirtet täglich außer montags seine Gäste.<br><br><a href=\"https://www.google.com/maps/place/Burg+Rabenstein\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 12, name: "12. Niemegk", x: 1620, y: 1140, description: "Das Städtchen Niemegk und das alte Rathaus prägen das Stadtbild um. Vom Kirchturm bietet sich ein schöner Ausblick auf die Hauptarten des Flämings. Ein greßganter Wasserkrum, der heute ein Brausmuseum, einen Regionalladen und eine Lederungskultur behenbergs, liegen am südlichen Rand der Stadt ganz auf dem Brandwanderweg 44. Ein Ausflug mit dem Rad lohnt sich von Niemeck aus auf die Feldsteinkirchen-radroute, die zu sieben flämingstypischen Kunstensteinsten führt.<br><br><a href=\"https://www.google.com/maps/place/Rathaus+Niemegk\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 13, name: "13. Flämingbuchen", x: 650, y: 1174, description: "In dem großen Waldgebiet der Brandhelfe sind einige Inseln aus Buchen zu finden, wie in den Naturschutz-gebieten 'Flämingbuchen' und 'Spring'. Die Buchen-wanderwegen 70 oder 71 lassen sich diese landschaft-lichen Besonderheiten des Naturparks ertesten. Startpunkte sind die Bahnhöfe Medewitz und Merkenburg.<br><br><a href=\"https://www.google.com/maps/place/Naturschutzgebiet+Fl%C3%A4mingbuchen\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 14, name: "14. Brautrummel mit Riesenstein", x: 1095, y: 995, description: "Wie ein kleiner Scetchel erfrrank im junges Brautpaar nach einem Gewitterregen in der Rummel, einem Trockental. Heute kann man auf einer Rundwanderung zum Rie-senste8n die besondere Natur in der Rummel erleben, Familienfotos auf dem Riesen-stein schleifen, ein Picknick im Grünen genießen und anschlie-ßend ein Nickerchen auf dem großen Feldbreit machen.<br><br><a href=\"https://www.google.com/maps/place/Riesenstein\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 15, name: "15. Neuendorfer Rummel", x: 1400, y: 1340, description: "Die Rummeln, verzweigte, enge Trockentälchen, entstan-den nach Regien, Birnen und Weiden der Eiszeit. In Zeiten stetig weiter vereist. Wie grüne, bewaldete Finger stie-chen sie sich weit in die Agrarlandschaft hinein. Über den Burgenwanderweg oder den Rundwanderweg 40 kann man die üppig bewach-sene und stellengeise Neuen-dorfer Rummel durchwandern.<br><br><a href=\"https://www.google.com/maps/place/Neuendorfer+Rummel\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
-    { id: 16, name: "16. Garrey mit Aussichtsplattform", x: 1490, y: 1430, description: "Die Landschaft rings um Garrey bietet fantastische Ausblicke, weite Täler und steile, aufgeschnittene Naturpfade. Deshalb 'krönt' eine Aussichtsplattform das alte Wasserwerk, das aufundig restauriert wurde und dem sich eine kleine Ausstellung befindet. Der Ausflug lässt sich sehr gut mit einer Wanderung in die Neuendorfer Rummel und einer Einkehr ins Café Leh-mann in Garrey verbinden.<br><br><a href=\"https://www.google.com/maps/place/Aussichtsturm+am+alten+Wasserwerk\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" }
+    { id: 1, name: "1. Stadt und Burg Ziesar", x: 472, y: 130, description: "Auf der Burg Ziesar befindet sich das Museum für brandenburgische Kirchen- und Kulturgeschichte des Mittelalters und der Reformationszeit. Sehenswert sind hier auch die Schlosskapelle, der sehr gut erhaltene Burgfried und der weite Blick vom Storchenturm über das Ziesarer Land.<br><br><a href=\"https://www.google.com/maps/place/Burg+Ziesar\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 2, name: "2. Gutspark Dahlen", x: 780, y: 355, description: "Der Gutspark Dahlen ist ein Ort seltener botanischer Vielfalt. Spaziergänge um den Schwanensee verzaubern die Besucher. Zudem können der Bauerngarten und Duftpflanzen besucht werden. Gleich gegenüber dem Gutspark steht, etwas verborgen, die Fachwerkkirche.<br><br><a href=\"https://www.google.com/maps/place/Gutspark+Dahlen\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 3, name: "3. Klein Briesener Bach", x: 995, y: 250, description: "Der Artesische Brunnen ist im Naturschutzgebiet Klein Briesener Bach zu finden. Das Wasser steigt hier durch den Eigendruck hervor und wird dem Briesener Bach zugeführt. Wanderer können dem schönen Bach auf dem Burgenwanderweg bis zum Aussichtsturm 'Schöne Aussicht' folgen.<br><br><a href=\"https://www.google.com/maps/place/Artesischer+Brunnen\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 4, name: "4. Paradies Dippmannsdorf", x: 1340, y: 275, description: "Hier vereinen sich einige Dutzend Quellen glasklaren Wassers, die den Mühlenbach speisen. Das von Buchen, Eichen und Birken umgebene Quellgebiet wurde durch Stege erschlossen. Ein Spaziergang lohnt sich zu jeder Jahreszeit und lässt sich gut mit einer Wanderung auf dem Paradiesweg verbinden.<br><br><a href=\"https://www.google.com/maps/place/Paradies\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 5, name: "5. Töpferort Görzke", x: 415, y: 495, description: "Ein Besuch der kleinen Museen und des Hofladens auf dem Handwerkerhof sowie die Einkaufsmöglichkeiten in den Töpfereien erfreuen die Besucher des Flämingdorfes. Auf dem Töpferwanderweg werden Wandernde mit weitläufigen Ausblicken auf das Tal der Buckau und die umliegende Fläminglandschaft belohnt.<br><br><a href=\"https://www.google.com/maps/place/Handwerkerhof+G%C3%B6rzke\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 6, name: "6. Hagelberg", x: 955, y: 725, description: "Der Hagelberg, ein echter 'Zweihunderter', lädt zum Eintrag ins Gipfelbuch ein - nicht ohne Grund wird der Landstrich rings um Klein Glien auch 'Kleines Mittelgebirge' genannt. Für den Aufstieg zum Gipfelkreuz wird man mit einem schönen Blick über die Fläminglandschaft belohnt. Unweit davon öffnet am Wochenende im historischen Gutshaus in Klein Glien ein Café für Ausflügler.<br><br><a href=\"https://www.google.com/maps/place/Hagelberg\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 7, name: "7. Bad Belzig mit Burg Eisenhardt", x: 1364, y: 605, description: "Auf der komplett erhaltenen Burg Eisenhardt lässt sich die 1000-jährige Geschichte der Stadt hautnah erkunden. Vom Butterturm bietet sich wohl der schönste Ausblick auf Stadt und Urstromtal. Unterhalb der Burg befinden sich die Burgwiesen, auf denen die bedrohten Großtrappen einen stillen Unterschlupf finden. In der SteinTherme sorgt jodhaltiges Thermalwasser für gesunde Entspannung.<br><br><a href=\"https://www.google.com/maps/place/Burg+Eisenhardt\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 8, name: "8. Aussichtspunkt Belziger Landschaftswiesen", x: 1575, y: 555, description: "Am Burgenwanderweg gelegen, bietet sich ein besonders eindrucksvoller Blick in das Niederungsgebiet der Belziger Landschaftswiesen. Dort befindet sich eines der wichtigsten Vogelschutzgebiete Brandenburgs. Wenn im Winterhalbjahr Großtrappen pflanzliche Nahrung suchen, bieten sich vom Rastplatz aus sehr gute Beobachtungsmöglichkeiten.<br><br><a href=\"https://www.google.com/maps/place/Aussichtsturm+Belziger+Landschaftswiesen\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 9, name: "9. Wiesenburg mit Schloss und Park", x: 765, y: 855, description: "Das Schloss zeigt sich heute im Erscheinungsbild des 19. Jahrhunderts. Vom Schlossturm hat man eine eindrucksvolle Aussicht auf Wiesenburg und seinen Park. Der als Landschaftspark gestaltete Schlosspark ist die bedeutendste Anlage seiner Art im Hohen Fläming und lädt zu ausgiebigen Spaziergängen ein. Bis zum Bahnhof erstreckt sich diese Anlage, durch die auch der Kunstwanderweg führt.<br><br><a href=\"https://www.google.com/maps/place/Schloss+Wiesenburg\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 10, name: "10. Naturparkzentrum Hoher Fläming", x: 1165, y: 1370, description: "Das Besucherinformationszentrum ist eine zentrale Anlaufstelle für alle Gäste. Hier erhält man die besten Tipps für Ausflüge in und durch den Hohen Fläming und kann Fahrräder ausleihen. Neben dem Fläming-Laden mit regionalen Produkten laden eine spannende Ausstellung und ein 'Garten der Sinne' ein. Direkt vor dem Naturparkzentrum hält der Burgenbus.<br><br><a href=\"https://www.google.com/maps/place/Naturparkzentrum+Hoher+Fl%C3%A4ming\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 11, name: "11. Raben mit Burg Rabenstein", x: 1120, y: 1333, description: "Bei Raben liegt die steilste der Flämingburgen, die Burg Rabenstein. Von der Burg führt ein Naturlehrpfad durch das Naturschutzgebiet Rabenstein hinunter ins Dorf und bis zum Naturparkzentrum. Die tagsüber offene Feldsteinkirche kann auch besucht werden. Der Gasthof Hemmerling bewirtet täglich außer montags seine Gäste.<br><br><a href=\"https://www.google.com/maps/place/Burg+Rabenstein\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 12, name: "12. Niemegk", x: 1620, y: 1140, description: "Das Städtchen Niemegk und das Renaissance-Rathaus prägen das Stadtbild. Vom Kirchturm bietet sich ein schöner Ausblick. Ein imposanter Wasserturm, der heute ein Brausemuseum und einen Regionalladen beherbergt, liegt am südlichen Rand der Stadt direkt am Burgenwanderweg. Ein Ausflug mit dem Rad lohnt sich von Niemegk aus auf die Feldsteinkirchenroute.<br><br><a href=\"https://www.google.com/maps/place/Rathaus+Niemegk\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 13, name: "13. Flämingbuchen", x: 650, y: 1174, description: "In dem großen Waldgebiet der Brandtsheide sind einige Inseln aus Buchen zu finden, wie in den Naturschutzgebieten 'Flämingbuchen' und 'Spring'. Auf den Buchenwanderwegen 70 oder 71 lassen sich diese landschaftlichen Besonderheiten des Naturparks erleben. Startpunkte sind die Bahnhöfe Medewitz und Wiesenburg.<br><br><a href=\"https://www.google.com/maps/place/Naturschutzgebiet+Fl%C3%A4mingbuchen\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 14, name: "14. Brautrummel mit Riesenstein", x: 1095, y: 995, description: "Wie eine Sage erzählt, verschwand ein junges Brautpaar nach einem Gewitterregen in der Rummel, einem Trockental. Heute kann man auf einer Rundwanderung zum Riesenstein die besondere Natur in der Rummel erleben, Familienfotos am Riesenstein machen, ein Picknick im Grünen genießen und anschließend eine Rast auf dem großen Feldstein machen.<br><br><a href=\"https://www.google.com/maps/place/Riesenstein\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 15, name: "15. Neuendorfer Rummel", x: 1400, y: 1340, description: "Die Rummeln, verzweigte, enge Trockentäler, entstanden durch das Schmelzwasser der Eiszeit. In späterer Zeit wurden sie stetig weiter vertieft. Wie grüne, bewaldete Finger strecken sie sich weit in die Agrarlandschaft hinein. Über den Burgenwanderweg oder den Rundwanderweg 40 kann man die üppig bewachsene und stellenweise urwaldartige Neuendorfer Rummel durchwandern.<br><br><a href=\"https://www.google.com/maps/place/Neuendorfer+Rummel\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" },
+    { id: 16, name: "16. Garrey mit Aussichtsplattform", x: 1490, y: 1430, description: "Die Landschaft rings um Garrey bietet fantastische Ausblicke, weite Täler und steile Kanten. Deshalb 'krönt' eine Aussichtsplattform das alte Wasserwerk, das aufwendig restauriert wurde und in dem sich eine kleine Ausstellung befindet. Der Ausflug lässt sich sehr gut mit einer Wanderung in die Neuendorfer Rummel und einer Einkehr ins Café Lehmann in Garrey verbinden.<br><br><a href=\"https://www.google.com/maps/place/Aussichtsturm+am+alten+Wasserwerk\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"map-link\">View on Google Maps</a>" }
 ];
 
 // Game State
@@ -65,6 +69,8 @@ const state = {
     },
     achievements: new Set<string>(),
     minimapCtx: null as CanvasRenderingContext2D | null,
+    zoom: 1,
+    targetZoom: 1,
 };
 
 // DOM Cache
@@ -108,6 +114,8 @@ const dom = {
     achievementToast: document.getElementById('achievement-toast') as HTMLElement,
     achievementText: document.getElementById('achievement-text') as HTMLElement,
     minimapCanvas: document.getElementById('minimap-canvas') as HTMLCanvasElement,
+    zoomIn: document.getElementById('zoom-in') as HTMLButtonElement,
+    zoomOut: document.getElementById('zoom-out') as HTMLButtonElement,
 };
 
 // Audio System
@@ -119,6 +127,11 @@ function initAudio() {
     if (audio.initialized) return;
     audio.initialized = true;
     console.log("Audio disabled for offline compatibility.");
+}
+
+// Helper: Strip numbering from name (e.g., "1. Name" -> "Name")
+function getCleanName(name: string) {
+    return name.replace(/^\d+\.\s*/, '');
 }
 
 async function loadImageAndStart() {
@@ -204,7 +217,7 @@ function createPOIMarkers() {
         marker.id = `poi-${poi.id}`;
         marker.style.left = `${poi.x}px`;
         marker.style.top = `${poi.y}px`;
-        marker.title = poi.name.replace(/^\d+\.\s*/, '');
+        marker.title = getCleanName(poi.name);
         
         const inner = document.createElement('div');
         inner.className = 'poi-marker-inner';
@@ -228,7 +241,7 @@ function populatePOIList() {
         item.className = 'poi-item';
         item.id = `poi-list-${poi.id}`;
         item.innerHTML = `
-            <div class="poi-item-name">${poi.name}</div>
+            <div class="poi-item-name">${getCleanName(poi.name)}</div>
             <div class="poi-item-status">${poi.visited ? '✓' : ''}</div>
         `;
         
@@ -266,8 +279,23 @@ function setupEventListeners() {
     dom.restartButton.addEventListener('click', restartGame);
     dom.exploreButton.addEventListener('click', freeFlightMode);
     document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Zoom Controls
+    dom.zoomIn.addEventListener('click', () => adjustZoom(CONFIG.ZOOM_STEP));
+    dom.zoomOut.addEventListener('click', () => adjustZoom(-CONFIG.ZOOM_STEP));
+    document.addEventListener('wheel', handleWheel, { passive: false });
 }
 
+function adjustZoom(delta: number) {
+    state.targetZoom = Math.max(CONFIG.MIN_ZOOM, Math.min(CONFIG.MAX_ZOOM, state.targetZoom + delta));
+}
+
+function handleWheel(e: WheelEvent) {
+    if (e.ctrlKey) return; // Let browser handle pinch zoom
+    e.preventDefault();
+    const delta = -Math.sign(e.deltaY) * (CONFIG.ZOOM_STEP / 2);
+    adjustZoom(delta);
+}
 
 // Input Handlers
 function handleKeyDown(e: KeyboardEvent) {
@@ -277,6 +305,8 @@ function handleKeyDown(e: KeyboardEvent) {
     if ((e.key === 'l' || e.key === 'L') && state.nearbyPOI) landAtPOI();
     if (e.key === 'm' || e.key === 'M') toggleMenu();
     if (e.key === 'Escape') closeMenu();
+    if (e.key === '+' || e.key === '=') adjustZoom(CONFIG.ZOOM_STEP);
+    if (e.key === '-' || e.key === '_') adjustZoom(-CONFIG.ZOOM_STEP);
 }
 
 function handleKeyUp(e: KeyboardEvent) {
@@ -374,6 +404,11 @@ function gameLoop(currentTime: number) {
 }
 
 function update(dt: number) {
+    // Smooth zoom transition
+    if (Math.abs(state.targetZoom - state.zoom) > 0.001) {
+        state.zoom += (state.targetZoom - state.zoom) * 0.1;
+    }
+
     const balloon = state.balloon;
     if (state.startTime > 0) state.elapsedTime = Date.now() - state.startTime;
 
@@ -457,6 +492,9 @@ function checkPOIProximity() {
 }
 
 function render() {
+    // Balloon position is relative to its container now, we move the map around it
+    // But for visual consistency during zoom, the balloon stays centered on screen.
+    // The container transform is used for landing animations.
     dom.balloonContainer.style.transform = `translate(calc(${state.balloon.x}px - 50%), calc(${state.balloon.y}px - 100%))`;
     
     const sunCycle = (state.elapsedTime % 120000) / 120000 * Math.PI * 2;
@@ -497,15 +535,16 @@ function renderMinimap() {
     
     ctx.clearRect(0, 0, w, h);
     
-    // Background matching the lighter map theme
-    ctx.fillStyle = '#e0e0e0'; 
+    // Background matching the vintage parchment theme
+    ctx.fillStyle = '#f7f1e3'; 
     ctx.fillRect(0, 0, w, h);
     
     state.pois.forEach(poi => {
-        // Only show visited POIs to maintain discovery mechanic
+        // Only show visited POIs
         if (!poi.visited) return;
 
-        ctx.fillStyle = '#2a9d8f'; // Success Green
+        // Ink-like green markers
+        ctx.fillStyle = '#2e7d32'; 
         ctx.beginPath();
         ctx.arc(poi.x * scale, poi.y * scale, 3, 0, Math.PI * 2);
         ctx.fill();
@@ -514,8 +553,8 @@ function renderMinimap() {
     ctx.save();
     ctx.translate(state.balloon.x * scale, state.balloon.y * scale);
     ctx.rotate((state.balloon.angle + 90) * Math.PI / 180);
-    // Balloon marker
-    ctx.fillStyle = '#003049';
+    // Balloon marker - Dark Ink
+    ctx.fillStyle = '#2c1810';
     ctx.beginPath();
     ctx.moveTo(0, -6);
     ctx.lineTo(-5, 5);
@@ -528,13 +567,50 @@ function renderMinimap() {
 function centerCamera() {
     const viewportWidth = dom.mapContainer.clientWidth;
     const viewportHeight = dom.mapContainer.clientHeight;
-    const targetX = -state.balloon.x + viewportWidth / 2;
-    const targetY = -state.balloon.y + viewportHeight / 2;
-    const minX = -(CONFIG.MAP_WIDTH - viewportWidth);
-    const minY = -(CONFIG.MAP_HEIGHT - viewportHeight);
-    const clampedX = Math.max(minX, Math.min(0, targetX));
-    const clampedY = Math.max(minY, Math.min(0, targetY));
-    dom.mapViewport.style.transform = `translate(${clampedX}px, ${clampedY}px)`;
+    const zoom = state.zoom;
+
+    // Calculate target translation to center balloon
+    // We move the viewport layer. 
+    // transform: translate(x, y) scale(zoom)
+    // Since transform-origin is 0 0 (top left), 
+    // The visual position of balloon on screen is: (balloon.x * zoom) + translateX
+    // We want this to equal viewportWidth / 2
+    
+    let targetX = (viewportWidth / 2) - (state.balloon.x * zoom);
+    let targetY = (viewportHeight / 2) - (state.balloon.y * zoom);
+
+    // Clamping Logic
+    // Max X (left edge visible) is 0
+    // Min X (right edge visible) is viewportWidth - (MAP_WIDTH * zoom)
+    // If zoomed out so map is smaller than viewport, center it.
+    
+    const mapVisualWidth = CONFIG.MAP_WIDTH * zoom;
+    const mapVisualHeight = CONFIG.MAP_HEIGHT * zoom;
+    
+    let minX = viewportWidth - mapVisualWidth;
+    let minY = viewportHeight - mapVisualHeight;
+    
+    // If map is smaller than viewport, center it
+    if (minX > 0) {
+        // map fits inside, center it
+        targetX = (viewportWidth - mapVisualWidth) / 2;
+        minX = targetX; // prevent clamping override
+    }
+    
+    if (minY > 0) {
+        targetY = (viewportHeight - mapVisualHeight) / 2;
+        minY = targetY;
+    }
+
+    // Apply clamping if map is larger than viewport
+    if (mapVisualWidth >= viewportWidth) {
+        targetX = Math.max(minX, Math.min(0, targetX));
+    }
+    if (mapVisualHeight >= viewportHeight) {
+        targetY = Math.max(minY, Math.min(0, targetY));
+    }
+
+    dom.mapViewport.style.transform = `translate(${targetX}px, ${targetY}px) scale(${zoom})`;
 }
 
 function centerCameraOn(x: number, y: number) {
@@ -580,7 +656,7 @@ function landAtPOI() {
 }
 
 function showPOIModal(poi: typeof POI_DATA[0] & { visited: boolean }) {
-    dom.poiModalTitle.textContent = poi.name;
+    dom.poiModalTitle.textContent = getCleanName(poi.name);
     dom.poiModalDescription.innerHTML = poi.description;
     dom.modalIcon.textContent = String(poi.id);
     dom.modalVisitTime.textContent = formatTime(state.elapsedTime);

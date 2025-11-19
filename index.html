@@ -62,7 +62,7 @@
                                     <path d="M0 5h10 M5 0v10" stroke="#5d4037" stroke-width="2"/>
                                 </pattern>
 
-                                <!-- Flame Gradient -->
+                                <!-- Burner Flame Gradient -->
                                 <linearGradient id="flameGradient" x1="0.5" y1="1" x2="0.5" y2="0">
                                     <stop offset="0%" stop-color="#ffeb3b"/> <!-- Yellow -->
                                     <stop offset="60%" stop-color="#ff9800"/> <!-- Orange -->
@@ -76,20 +76,20 @@
 
                             <!-- BALLOON ENVELOPE -->
                             <g transform="translate(100, 90)">
-                                <!-- Outer Panels (Dark Navy) -->
-                                <path d="M0 -85 C-55 -85 -90 -40 -90 10 C-90 55 -50 85 -15 110 L15 110 C50 85 90 55 90 10 C90 -40 55 -85 0 -85 Z" fill="#1d3557"/>
+                                <!-- Outer Panels (Black) -->
+                                <path d="M0 -85 C-55 -85 -90 -40 -90 10 C-90 55 -50 85 -15 110 L15 110 C50 85 90 55 90 10 C90 -40 55 -85 0 -85 Z" fill="#151513"/>
                                 
-                                <!-- Mid Side Panels (Red) -->
-                                <path d="M0 -85 C-40 -85 -70 -40 -70 10 C-70 50 -35 80 -12 108 L12 108 C35 80 70 50 70 10 C70 -40 40 -85 0 -85 Z" fill="#e63946"/>
+                                <!-- Mid Side Panels (Blue) -->
+                                <path d="M0 -85 C-40 -85 -70 -40 -70 10 C-70 50 -35 80 -12 108 L12 108 C35 80 70 50 70 10 C70 -40 40 -85 0 -85 Z" fill="#0296c6"/>
 
-                                <!-- Inner Side Panels (Cream/White) -->
-                                <path d="M0 -85 C-25 -85 -45 -40 -45 10 C-45 45 -20 75 -8 106 L8 106 C20 75 45 45 45 10 C45 -40 25 -85 0 -85 Z" fill="#f1faee"/>
+                                <!-- Inner Side Panels (Yellow) -->
+                                <path d="M0 -85 C-25 -85 -45 -40 -45 10 C-45 45 -20 75 -8 106 L8 106 C20 75 45 45 45 10 C45 -40 25 -85 0 -85 Z" fill="#f5d306"/>
 
-                                <!-- Center Panel (Navy) -->
-                                <path d="M0 -85 C-10 -85 -20 -40 -20 10 C-20 40 -10 70 -4 105 L4 105 C10 70 20 40 20 10 C20 -40 10 -85 0 -85 Z" fill="#1d3557"/>
+                                <!-- Center Panel (Green) -->
+                                <path d="M0 -85 C-10 -85 -20 -40 -20 10 C-20 40 -10 70 -4 105 L4 105 C10 70 20 40 20 10 C20 -40 10 -85 0 -85 Z" fill="#0ca644"/>
                                 
-                                <!-- Horizontal Band (Decorative) -->
-                                <path d="M-68 20 Q0 40 68 20 L68 5 Q0 25 -68 5 Z" fill="#e63946" opacity="0.9" style="mix-blend-mode: multiply"/>
+                                <!-- Horizontal Band (White) -->
+                                <path d="M-68 20 Q0 40 68 20 L68 5 Q0 25 -68 5 Z" fill="#ffffff" opacity="0.9" style="mix-blend-mode: overlay"/>
 
                                 <!-- 3D Overlay -->
                                 <path d="M0 -85 C-55 -85 -90 -40 -90 10 C-90 55 -50 85 -15 110 L15 110 C50 85 90 55 90 10 C90 -40 55 -85 0 -85 Z" fill="url(#balloonShade)"/>
@@ -160,6 +160,12 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Zoom Controls -->
+    <div id="zoom-controls">
+        <button class="action-button secondary" id="zoom-in" title="Zoom In">＋</button>
+        <button class="action-button secondary" id="zoom-out" title="Zoom Out">－</button>
     </div>
 
     <!-- Controls -->
